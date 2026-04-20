@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RERU — Reusable Resources</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Outfit', sans-serif; }
+    body { background: oklch(97% 0.01 145); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: oklch(82% 0.10 145); border-radius: 99px; }
+    select { appearance: auto; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ─── SHARED: COLORS, MOCK DATA, PRIMITIVES ─────────────────────────────────
+    const COLORS = {
+      bg: 'oklch(97% 0.01 145)',
+      surface: '#ffffff',
+      border: 'oklch(90% 0.03 145)',
+      textPrimary: 'oklch(14% 0.02 145)',
+      textSecondary: 'oklch(42% 0.04 145)',
+      textMuted: 'oklch(62% 0.03 145)',
+      green900: 'oklch(28% 0.10 145)',
+      green800: 'oklch(33% 0.12 145)',
+      green700: 'oklch(38% 0.13 145)',
+      green600: 'oklch(46% 0.15 145)',
+      green500: 'oklch(54% 0.16 145)',
+      green400: 'oklch(64% 0.15 145)',
+      green300: 'oklch(74% 0.12 145)',
+      green200: 'oklch(82% 0.10 145)',
+      green100: 'oklch(92% 0.06 145)',
+      green50:  'oklch(96% 0.03 145)',
+      accent: 'oklch(68% 0.16 160)',
+      danger: 'oklch(52% 0.18 25)',
+      warning: 'oklch(72% 0.16 75)',
+    };
+
+    const MOCK_CLIENTS = [
+      { id: 1, name: 'Stephen Obbo', address: 'Mparo Drive, New Nsasa Estate', zone: 'Zone A', phone: '0701234567', plan: 'annual', status: 'active', paidThrough: '2027-04-07', nextCollection: '2026-04-22', collectionDay: 'Wednesday' },
+      { id: 2, name: 'Grace Namutebi', address: 'Plot 12, Nsasa Estate', zone: 'Zone B', phone: '0782345678', plan: 'monthly', status: 'active', paidThrough: '2026-04-30', nextCollection: '2026-04-23', collectionDay: 'Thursday' },
+    ];
+
+    const MOCK_INVOICES = [
+      { id: 'INV-01234', date: '2026-04-07', client: 'Stephen Obbo', address: 'Mparo Drive, New Nsasa Estate', plan: 'Annual', qty: 12, unitPrice: 20000, subtotal: 240000, tax: 14400, total: 254400, status: 'paid' },
+      { id: 'INV-01233', date: '2026-03-01', client: 'Stephen Obbo', address: 'Mparo Drive, New Nsasa Estate', plan: 'Annual', qty: 12, unitPrice: 20000, subtotal: 240000, tax: 14400, total: 254400, status: 'paid' },
+    ];
+
+    const MOCK_COLLECTIONS = [
+      { date: '2026-04-22', status: 'scheduled', notes: '' },
+      { date: '2026-04-15', status: 'completed', notes: 'Collected 2 bags' },
+      { date: '2026-04-08', status: 'completed', notes: 'Collected 2 bags' },
+      { date: '2026-04-01', status: 'completed', notes: 'Collected 3 bags' },
+      { date: '2026-03-25', status: 'missed', notes: 'Client not home' },
+    ];
+
+    const Icon = ({ name, size = 20, color = 'currentColor', strokeWidth = 1.8 }) => {
+      const icons = {
+        home: <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></>,
+        trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></>,
+        recycle: <><path d="M7 19H4.5a2.5 2.5 0 010-5H12"/><path d="M17 19h2.5a2.5 2.5 0 000-5H12"/><path d="M12 5v9"/><path d="M9 8l3-3 3 3"/></>,
+        calendar: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+        invoice: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+        user: <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+        settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></>,
+        phone: <><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.64A2 2 0 012 .91h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></>,
+        mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+        check: <><polyline points="20 6 9 17 4 12"/></>,
+        chevronRight: <><polyline points="9 18 15 12 9 6"/></>,
+        chevronLeft: <><polyline points="15 18 9 12 15 6"/></>,
+        logout: <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+        bell: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></>,
+        plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+        download: <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+        map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
+        doc: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></>,
+        truck: <><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>,
+        leaf: <><path d="M2 22c1.25-1.25 2.61-2.44 3.67-3.73C8.26 15.09 9.82 12 11 9c1.86-4.51 6-7 6-7S13 5.5 11 9c2.86-4.15 6.69-6 9-6-1.04 4.22-3.67 8.47-7 11-2.2 1.67-4.67 3-7 4.5C4 19.5 2 22 2 22z"/></>,
+        x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+        alert: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+        info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+      };
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          {icons[name]}
+        </svg>
+      );
+    };
+
+    const Logo = ({ size = 'md', white = false }) => {
+      const sizes = { sm: { icon: 28, text: 14 }, md: { icon: 36, text: 17 }, lg: { icon: 48, text: 22 } };
+      const s = sizes[size] || sizes.md;
+      const fg = white ? '#ffffff' : COLORS.green700;
+      const textColor = white ? '#ffffff' : COLORS.green900;
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: s.icon, height: s.icon, background: white ? 'rgba(255,255,255,0.15)' : COLORS.green100, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${white ? 'rgba(255,255,255,0.3)' : COLORS.green200}` }}>
+            <Icon name="recycle" size={s.icon * 0.55} color={fg} strokeWidth={2} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: s.text, lineHeight: 1, color: textColor, letterSpacing: '-0.02em' }}>REUSABLE</div>
+            <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: s.text, lineHeight: 1.1, color: textColor, letterSpacing: '-0.02em' }}>RESOURCES <span style={{ fontWeight: 400, fontSize: s.text * 0.72, color: white ? 'rgba(255,255,255,0.7)' : COLORS.green500 }}>RERU</span></div>
+          </div>
+        </div>
+      );
+    };
+
+    const Button = ({ children, variant = 'primary', size = 'md', onClick, disabled, icon, style = {}, fullWidth = false }) => {
+      const [hovered, setHovered] = React.useState(false);
+      const base = {
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', borderRadius: 10,
+        fontFamily: 'Outfit, sans-serif', fontWeight: 600, transition: 'all 0.15s ease',
+        opacity: disabled ? 0.5 : 1, width: fullWidth ? '100%' : undefined, ...style,
+      };
+      const sizes = {
+        sm: { padding: '7px 14px', fontSize: 13 },
+        md: { padding: '11px 20px', fontSize: 15 },
+        lg: { padding: '14px 28px', fontSize: 16 },
+      };
+      const variants = {
+        primary: { background: hovered ? COLORS.green600 : COLORS.green700, color: '#fff' },
+        secondary: { background: hovered ? COLORS.green50 : COLORS.green100, color: COLORS.green700, border: `1.5px solid ${COLORS.green200}` },
+        outline: { background: hovered ? COLORS.green50 : 'transparent', color: COLORS.green700, border: `1.5px solid ${COLORS.green200}` },
+        ghost: { background: hovered ? COLORS.green50 : 'transparent', color: COLORS.green700 },
+        danger: { background: hovered ? 'oklch(48% 0.18 25)' : COLORS.danger, color: '#fff' },
+        white: { background: hovered ? COLORS.green50 : '#fff', color: COLORS.green700 },
+      };
+      return (
+        <button style={{ ...base, ...sizes[size], ...variants[variant] }} onClick={onClick} disabled={disabled}
+          onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+          {icon && <Icon name={icon} size={16} color="currentColor" />}
+          {children}
+        </button>
+      );
+    };
+
+    const Card = ({ children, style = {}, padding = 24, onClick, hover = false }) => {
+      const [hovered, setHovered] = React.useState(false);
+      return (
+        <div style={{ background: COLORS.surface, borderRadius: 16, border: `1.5px solid ${hovered && hover ? COLORS.green200 : COLORS.border}`, padding, boxShadow: hovered && hover ? '0 4px 20px rgba(0,80,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)', transition: 'all 0.15s', cursor: onClick ? 'pointer' : 'default', ...style }}
+          onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+          {children}
+        </div>
+      );
+    };
+
+    const Input = ({ label, type = 'text', value, onChange, placeholder, required, icon, hint, error }) => {
+      const [focused, setFocused] = React.useState(false);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {label && <label style={{ fontFamily: 'Outfit', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, letterSpacing: '0.01em' }}>{label}{required && <span style={{ color: COLORS.danger }}> *</span>}</label>}
+          <div style={{ position: 'relative' }}>
+            {icon && <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: focused ? COLORS.green600 : COLORS.textMuted, pointerEvents: 'none' }}><Icon name={icon} size={16} /></div>}
+            <input type={type} value={value} onChange={onChange} placeholder={placeholder} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+              style={{ width: '100%', boxSizing: 'border-box', padding: icon ? '11px 14px 11px 38px' : '11px 14px', fontFamily: 'Outfit', fontSize: 15, borderRadius: 10, border: `1.5px solid ${error ? COLORS.danger : focused ? COLORS.green500 : COLORS.border}`, background: focused ? '#fff' : COLORS.bg, outline: 'none', color: COLORS.textPrimary, transition: 'all 0.15s' }} />
+          </div>
+          {hint && !error && <div style={{ fontSize: 12, color: COLORS.textMuted, fontFamily: 'Outfit' }}>{hint}</div>}
+          {error && <div style={{ fontSize: 12, color: COLORS.danger, fontFamily: 'Outfit' }}>{error}</div>}
+        </div>
+      );
+    };
+
+    const Badge = ({ children, color = 'green', dot = false }) => {
+      const colors = {
+        green: { bg: COLORS.green100, text: COLORS.green700 },
+        yellow: { bg: 'oklch(95% 0.06 85)', text: 'oklch(42% 0.14 75)' },
+        red: { bg: 'oklch(95% 0.05 25)', text: COLORS.danger },
+        gray: { bg: 'oklch(93% 0.01 145)', text: COLORS.textMuted },
+        blue: { bg: 'oklch(93% 0.06 240)', text: 'oklch(38% 0.14 240)' },
+      };
+      const c = colors[color] || colors.green;
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 99, background: c.bg, color: c.text, fontSize: 12, fontWeight: 600, fontFamily: 'Outfit', whiteSpace: 'nowrap' }}>
+          {dot && <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.text, display: 'inline-block' }} />}
+          {children}
+        </span>
+      );
+    };
+
+    const Select = ({ label, value, onChange, options, required }) => {
+      const [focused, setFocused] = React.useState(false);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {label && <label style={{ fontFamily: 'Outfit', fontSize: 13, fontWeight: 600, color: COLORS.textSecondary }}>{label}{required && <span style={{ color: COLORS.danger }}> *</span>}</label>}
+          <select value={value} onChange={onChange} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+            style={{ width: '100%', padding: '11px 14px', fontFamily: 'Outfit', fontSize: 15, borderRadius: 10, border: `1.5px solid ${focused ? COLORS.green500 : COLORS.border}`, background: COLORS.bg, outline: 'none', color: COLORS.textPrimary, cursor: 'pointer' }}>
+            {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+      );
+    };
+
+    const formatUGX = (n) => `UGX ${n.toLocaleString()}`;
+    const formatDate = (d) => new Date(d).toLocaleDateString('en-UG', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    // ─── LANDING PAGE ──────────────────────────────────────────────────────────
+    const LandingPage = ({ onNavigate }) => {
+      const services = [
+        { icon: 'truck', title: 'Waste Collection', desc: 'Weekly doorstep pickup from homes, businesses and schools across Nsasa Estate.' },
+        { icon: 'leaf', title: 'Composting', desc: 'Biodegradable waste is composted using Black Soldier Fly and earthworm breeding.' },
+        { icon: 'recycle', title: 'Recycling', desc: 'Plastics, glass and paper are sorted, repurposed and sent to certified recycling facilities.' },
+        { icon: 'trash', title: 'Safe Disposal', desc: 'All waste transported to authorised dumpsites: Katikolo (Mukono) or Buyala (Kampala).' },
+      ];
+
+      const steps = [
+        { step: '01', title: 'Register', desc: 'Sign up online or call us. Fill in your address and choose a collection plan.' },
+        { step: '02', title: 'Get Your Bags', desc: 'We deliver colour-coded waste bags to your gate for easy sorting.' },
+        { step: '03', title: 'Set Out Waste', desc: 'Place bags at your gate by 8:00 AM on your designated collection day.' },
+        { step: '04', title: 'We Collect', desc: 'Our team collects every week. You track status right here in the app.' },
+      ];
+
+      const plans = [
+        { name: 'Monthly', price: 25000, period: '/month', note: 'Billed monthly', tag: null, per: 25000 },
+        { name: 'Annual', price: 240000, period: '/year', note: 'Save UGX 60,000 · Billed once', tag: 'Best Value', per: 20000 },
+      ];
+
+      return (
+        <div style={{ fontFamily: 'Outfit, sans-serif', color: COLORS.textPrimary, background: COLORS.bg, minHeight: '100vh' }}>
+          <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${COLORS.border}`, padding: '0 24px' }}>
+            <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+              <Logo size="sm" />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Button variant="ghost" size="sm" onClick={() => onNavigate('login')}>Sign In</Button>
+                <Button variant="primary" size="sm" onClick={() => onNavigate('register')}>Register Now</Button>
+              </div>
+            </div>
+          </nav>
+
+          <section style={{ background: `linear-gradient(135deg, ${COLORS.green900} 0%, ${COLORS.green700} 60%, ${COLORS.green500} 100%)`, padding: '80px 24px 90px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -80, right: -80, width: 320, height: 320, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+            <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+            <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', borderRadius: 99, padding: '6px 16px', marginBottom: 24 }}>
+                <Icon name="map" size={14} color="rgba(255,255,255,0.9)" />
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500 }}>Serving Nsasa Estate, Mukono District, Kampala</span>
+              </div>
+              <h1 style={{ fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 800, color: '#fff', lineHeight: 1.1, margin: '0 0 20px', letterSpacing: '-0.03em', textWrap: 'balance' }}>
+                A Cleaner Community<br />
+                <span style={{ color: COLORS.green200 }}>Starts Here.</span>
+              </h1>
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65, margin: '0 0 36px', maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
+                Tired of waste dumped in Nakiyanja River, road sides and empty plots? RERU collects, sorts, reduces, reuses and recycles your household garbage — responsibly.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Button variant="white" size="lg" onClick={() => onNavigate('register')} icon="plus">Register Your Home</Button>
+                <Button variant="outline" size="lg" onClick={() => onNavigate('login')} style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.08)' }}>Sign In</Button>
+              </div>
+              <div style={{ marginTop: 48, display: 'flex', gap: 32, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {[['Homes', 'Residential'], ['Businesses', 'Commercial'], ['Schools', 'Institutions']].map(([t, s]) => (
+                  <div key={t} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{t}</div>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{s}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section style={{ padding: '72px 24px', maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <div style={{ display: 'inline-block', background: COLORS.green100, color: COLORS.green700, padding: '4px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Our Services</div>
+              <h2 style={{ fontSize: 32, fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Collect. Sort. Recycle.</h2>
+              <p style={{ color: COLORS.textSecondary, fontSize: 16, maxWidth: 480, margin: '0 auto' }}>We handle the full cycle — from your gate to certified disposal and recycling facilities.</p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+              {services.map(s => (
+                <Card key={s.title} hover>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: COLORS.green100, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                    <Icon name={s.icon} size={22} color={COLORS.green600} />
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{s.title}</div>
+                  <div style={{ color: COLORS.textSecondary, fontSize: 14, lineHeight: 1.6 }}>{s.desc}</div>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ background: COLORS.green50, padding: '72px 24px' }}>
+            <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                <div style={{ display: 'inline-block', background: COLORS.green100, color: COLORS.green700, padding: '4px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>How It Works</div>
+                <h2 style={{ fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Simple as 1-2-3-4</h2>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                {steps.map((s, i) => (
+                  <div key={s.step} style={{ textAlign: 'center', padding: '0 12px' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: i === 0 ? COLORS.green700 : COLORS.green200, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontWeight: 800, fontSize: 18, color: i === 0 ? '#fff' : COLORS.green700 }}>{s.step}</div>
+                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{s.title}</div>
+                    <div style={{ color: COLORS.textSecondary, fontSize: 14, lineHeight: 1.6 }}>{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section style={{ padding: '72px 24px', maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <div style={{ display: 'inline-block', background: COLORS.green100, color: COLORS.green700, padding: '4px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</div>
+              <h2 style={{ fontSize: 32, fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Simple, Transparent Fees</h2>
+              <p style={{ color: COLORS.textSecondary, fontSize: 16 }}>No hidden charges. Payment via Mobile Money, Bank Transfer or Cash.</p>
+            </div>
+            <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {plans.map(p => (
+                <div key={p.name} style={{ flex: '1 1 300px', maxWidth: 360, background: p.tag ? COLORS.green700 : COLORS.surface, borderRadius: 20, padding: 32, border: p.tag ? 'none' : `1.5px solid ${COLORS.border}`, position: 'relative', boxShadow: p.tag ? '0 8px 40px rgba(0,80,0,0.18)' : 'none' }}>
+                  {p.tag && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: COLORS.accent, color: '#fff', padding: '4px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700 }}>{p.tag}</div>}
+                  <div style={{ fontSize: 18, fontWeight: 700, color: p.tag ? '#fff' : COLORS.textPrimary, marginBottom: 8 }}>{p.name} Plan</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontSize: 40, fontWeight: 800, color: p.tag ? '#fff' : COLORS.green700 }}>UGX {(p.price).toLocaleString()}</span>
+                    <span style={{ fontSize: 15, color: p.tag ? 'rgba(255,255,255,0.7)' : COLORS.textMuted }}>{p.period}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: p.tag ? 'rgba(255,255,255,0.7)' : COLORS.textMuted, marginBottom: 24 }}>{p.note} · UGX {p.per.toLocaleString()}/mo</div>
+                  {['Weekly waste collection', 'Colour-coded sorting bags', 'App access & tracking', 'Certified disposal'].map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <Icon name="check" size={16} color={p.tag ? COLORS.green200 : COLORS.green600} strokeWidth={2.5} />
+                      <span style={{ fontSize: 14, color: p.tag ? 'rgba(255,255,255,0.88)' : COLORS.textSecondary }}>{f}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 24 }}>
+                    <Button variant={p.tag ? 'white' : 'primary'} fullWidth onClick={() => onNavigate('register')}>Get Started</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p style={{ textAlign: 'center', color: COLORS.textMuted, fontSize: 13, marginTop: 24 }}>Payment due by 10th of each month. 5-year agreement renewable by mutual consent.</p>
+          </section>
+
+          <section style={{ background: COLORS.green900, padding: '64px 24px' }}>
+            <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}><Logo size="md" white /></div>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 16, lineHeight: 1.7, margin: '24px auto', maxWidth: 480 }}>
+                Wankata Village, Nakisunga Sub-county, Mukono District · P.O. Box 151132, Kampala
+              </p>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.85)', fontSize: 15 }}>
+                  <Icon name="phone" size={16} color={COLORS.green200} />
+                  0778527802 / 0704132691
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.85)', fontSize: 15 }}>
+                  <Icon name="mail" size={16} color={COLORS.green200} />
+                  btwesigye25@gmail.com
+                </div>
+              </div>
+              <Button variant="white" size="lg" onClick={() => onNavigate('register')} icon="plus">Register Your Household</Button>
+            </div>
+          </section>
+
+          <footer style={{ background: COLORS.green900, borderTop: '1px solid rgba(255,255,255,0.08)', padding: '16px 24px', textAlign: 'center' }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>© 2026 Reusable Resources (RERU) · Part of Mukono Countryside Mixed Farm Ltd · All rights reserved</p>
+          </footer>
+        </div>
+      );
+    };
+
+    // ─── AUTH SCREEN ───────────────────────────────────────────────────────────
+    const AuthScreen = ({ onNavigate, mode = 'login' }) => {
+      const [tab, setTab] = React.useState(mode);
+      const [loginForm, setLoginForm] = React.useState({ phone: '', pin: '' });
+      const [regForm, setRegForm] = React.useState({ name: '', phone: '', address: '', zone: 'Zone A', collectionDay: 'Wednesday', plan: 'monthly', agreeTerms: false });
+      const [errors, setErrors] = React.useState({});
+      const [loading, setLoading] = React.useState(false);
+      const [step, setStep] = React.useState(1);
+
+      React.useEffect(() => { setTab(mode); }, [mode]);
+
+      const handleLogin = () => {
+        const e = {};
+        if (!loginForm.phone) e.phone = 'Phone number is required';
+        if (!loginForm.pin) e.pin = 'PIN is required';
+        setErrors(e);
+        if (Object.keys(e).length) return;
+        setLoading(true);
+        setTimeout(() => { setLoading(false); onNavigate('dashboard'); }, 1200);
+      };
+
+      const handleRegNext = () => {
+        const e = {};
+        if (step === 1) {
+          if (!regForm.name.trim()) e.name = 'Full name is required';
+          if (!regForm.phone.trim()) e.phone = 'Phone number is required';
+        }
+        if (step === 2) {
+          if (!regForm.address.trim()) e.address = 'Address is required';
+        }
+        setErrors(e);
+        if (Object.keys(e).length) return;
+        if (step < 3) { setStep(s => s + 1); return; }
+        if (!regForm.agreeTerms) { setErrors({ terms: 'You must agree to the service agreement.' }); return; }
+        setLoading(true);
+        setTimeout(() => { setLoading(false); onNavigate('dashboard'); }, 1400);
+      };
+
+      const upd = (form, setForm, key) => (e) => { setForm(f => ({ ...f, [key]: e.target.value })); setErrors({}); };
+
+      return (
+        <div style={{ minHeight: '100vh', background: COLORS.bg, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <button onClick={() => onNavigate('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, color: COLORS.textSecondary, fontFamily: 'Outfit', fontSize: 14 }}>
+              <Icon name="chevronLeft" size={18} /> Back to Home
+            </button>
+            <Logo size="sm" />
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 24px 40px' }}>
+            <div style={{ width: '100%', maxWidth: 440 }}>
+              <div style={{ display: 'flex', background: COLORS.green100, borderRadius: 12, padding: 4, marginBottom: 28 }}>
+                {['login', 'register'].map(t => (
+                  <button key={t} onClick={() => { setTab(t); setStep(1); setErrors({}); }}
+                    style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: 600, fontSize: 14, background: tab === t ? '#fff' : 'transparent', color: tab === t ? COLORS.green700 : COLORS.textMuted, boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s' }}>
+                    {t === 'login' ? 'Sign In' : 'Register'}
+                  </button>
+                ))}
+              </div>
+
+              <Card padding={32}>
+                {tab === 'login' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div>
+                      <h2 style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em' }}>Welcome back</h2>
+                      <p style={{ margin: 0, color: COLORS.textMuted, fontSize: 14 }}>Sign in with your registered phone number</p>
+                    </div>
+                    <Input label="Phone Number" icon="phone" placeholder="07XX XXX XXX" value={loginForm.phone} onChange={upd(loginForm, setLoginForm, 'phone')} error={errors.phone} required />
+                    <Input label="PIN" type="password" icon="settings" placeholder="4-digit PIN" value={loginForm.pin} onChange={upd(loginForm, setLoginForm, 'pin')} error={errors.pin} required />
+                    <Button variant="primary" fullWidth size="lg" onClick={handleLogin} disabled={loading}>
+                      {loading ? 'Signing in…' : 'Sign In'}
+                    </Button>
+                    <p style={{ textAlign: 'center', fontSize: 13, color: COLORS.textMuted, margin: 0 }}>Don't have an account? <button onClick={() => setTab('register')} style={{ background: 'none', border: 'none', color: COLORS.green600, cursor: 'pointer', fontWeight: 600, fontFamily: 'Outfit', fontSize: 13 }}>Register now</button></p>
+                    <div style={{ background: COLORS.green50, borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <Icon name="info" size={15} color={COLORS.green600} />
+                      <p style={{ margin: 0, fontSize: 12, color: COLORS.textSecondary, lineHeight: 1.5 }}>Demo: use any phone + PIN to sign in as <strong>Stephen Obbo</strong></p>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                        {[1,2,3].map(s => (
+                          <div key={s} style={{ flex: 1, height: 4, borderRadius: 4, background: s <= step ? COLORS.green600 : COLORS.border, transition: 'background 0.3s' }} />
+                        ))}
+                      </div>
+                      <h2 style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 22, letterSpacing: '-0.02em' }}>
+                        {['Your Details', 'Your Address', 'Choose a Plan'][step - 1]}
+                      </h2>
+                      <p style={{ margin: 0, color: COLORS.textMuted, fontSize: 14 }}>Step {step} of 3</p>
+                    </div>
+
+                    {step === 1 && <>
+                      <Input label="Full Name" icon="user" placeholder="e.g. Jane Namutebi" value={regForm.name} onChange={upd(regForm, setRegForm, 'name')} error={errors.name} required />
+                      <Input label="Phone Number" icon="phone" placeholder="07XX XXX XXX" value={regForm.phone} onChange={upd(regForm, setRegForm, 'phone')} error={errors.phone} required hint="Used for login and payment notifications" />
+                    </>}
+
+                    {step === 2 && <>
+                      <Input label="Residential Address" icon="map" placeholder="e.g. Plot 4, Nsasa Estate" value={regForm.address} onChange={upd(regForm, setRegForm, 'address')} error={errors.address} required />
+                      <Select label="Collection Zone" value={regForm.zone} onChange={upd(regForm, setRegForm, 'zone')} options={['Zone A','Zone B','Zone C'].map(z => ({ value: z, label: z }))} />
+                      <Select label="Preferred Collection Day" value={regForm.collectionDay} onChange={upd(regForm, setRegForm, 'collectionDay')} options={['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => ({ value: d, label: d }))} />
+                    </>}
+
+                    {step === 3 && <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {[{ id: 'monthly', label: 'Monthly Plan', price: 'UGX 25,000/month', note: 'Pay monthly, cancel anytime' }, { id: 'annual', label: 'Annual Plan', price: 'UGX 240,000/year', note: 'Save UGX 60,000 · Best value' }].map(p => (
+                          <div key={p.id} onClick={() => setRegForm(f => ({ ...f, plan: p.id }))} style={{ border: `2px solid ${regForm.plan === p.id ? COLORS.green600 : COLORS.border}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', background: regForm.plan === p.id ? COLORS.green50 : '#fff', transition: 'all 0.15s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.textPrimary }}>{p.label}</div>
+                              <div style={{ fontSize: 13, color: COLORS.textMuted }}>{p.note}</div>
+                            </div>
+                            <div style={{ fontWeight: 800, fontSize: 15, color: COLORS.green700 }}>{p.price}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <input type="checkbox" id="agree" checked={regForm.agreeTerms} onChange={e => { setRegForm(f => ({ ...f, agreeTerms: e.target.checked })); setErrors({}); }} style={{ marginTop: 3, accentColor: COLORS.green600, width: 16, height: 16 }} />
+                        <label htmlFor="agree" style={{ fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.5 }}>
+                          I agree to the <button onClick={() => onNavigate('agreement')} style={{ background: 'none', border: 'none', color: COLORS.green600, cursor: 'pointer', fontWeight: 600, fontFamily: 'Outfit', fontSize: 13, padding: 0 }}>Service Agreement</button> terms and conditions
+                        </label>
+                      </div>
+                      {errors.terms && <p style={{ color: COLORS.danger, fontSize: 13, margin: 0 }}>{errors.terms}</p>}
+                    </>}
+
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {step > 1 && <Button variant="outline" size="lg" onClick={() => setStep(s => s - 1)} style={{ flex: 1 }}>Back</Button>}
+                      <Button variant="primary" size="lg" fullWidth={step === 1} onClick={handleRegNext} disabled={loading} style={step > 1 ? { flex: 2 } : {}}>
+                        {loading ? 'Registering…' : step < 3 ? 'Continue' : 'Complete Registration'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ─── APP SHELL + SCREENS ───────────────────────────────────────────────────
+    const client = MOCK_CLIENTS[0];
+
+    const AppShell = ({ page, onNavigate, children }) => {
+      const nav = [
+        { id: 'dashboard', label: 'Dashboard', icon: 'home' },
+        { id: 'collections', label: 'Collections', icon: 'truck' },
+        { id: 'invoices', label: 'Invoices', icon: 'invoice' },
+        { id: 'agreement', label: 'Agreement', icon: 'doc' },
+      ];
+      const [mobileOpen, setMobileOpen] = React.useState(false);
+
+      const Sidebar = ({ mobile = false }) => (
+        <div style={{ width: mobile ? '100%' : 220, background: COLORS.green900, display: 'flex', flexDirection: 'column', minHeight: mobile ? 'auto' : '100vh', padding: '0 0 24px' }}>
+          <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <Logo size="sm" white />
+          </div>
+          <div style={{ padding: '12px 12px', flex: 1 }}>
+            {nav.map(n => {
+              const active = page === n.id;
+              return (
+                <button key={n.id} onClick={() => { onNavigate(n.id); setMobileOpen(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: active ? 'rgba(255,255,255,0.12)' : 'transparent', color: active ? '#fff' : 'rgba(255,255,255,0.55)', fontFamily: 'Outfit', fontWeight: active ? 600 : 500, fontSize: 14, transition: 'all 0.15s', marginBottom: 2, textAlign: 'left' }}>
+                  <Icon name={n.icon} size={18} color={active ? '#fff' : 'rgba(255,255,255,0.5)'} />
+                  {n.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ padding: '0 12px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: COLORS.green600, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: '#fff' }}>
+                  {client.name.split(' ').map(w => w[0]).join('')}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: '#fff', lineHeight: 1.2 }}>{client.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{client.zone}</div>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => onNavigate('home')} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(255,255,255,0.45)', fontFamily: 'Outfit', fontSize: 13, transition: 'all 0.15s' }}>
+              <Icon name="logout" size={16} color="rgba(255,255,255,0.4)" /> Sign Out
+            </button>
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={{ display: 'flex', minHeight: '100vh', background: COLORS.bg, fontFamily: 'Outfit, sans-serif' }}>
+          <div style={{ flexShrink: 0 }} id="sidebar-wrapper">
+            <style>{`@media(max-width:700px){#sidebar-wrapper{display:none}#mobile-bar{display:flex!important}}`}</style>
+            <Sidebar />
+          </div>
+          <div id="mobile-bar" style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, background: COLORS.green900, padding: '12px 16px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Logo size="sm" white />
+            <button onClick={() => setMobileOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff' }}>
+              <Icon name={mobileOpen ? 'x' : 'settings'} size={22} color="#fff" />
+            </button>
+          </div>
+          {mobileOpen && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 199, background: COLORS.green900, paddingTop: 60 }}>
+              <Sidebar mobile />
+            </div>
+          )}
+          <div style={{ flex: 1, overflowY: 'auto', paddingTop: 0 }}>
+            <style>{`@media(max-width:700px){.app-main{padding-top:64px!important}}`}</style>
+            <div className="app-main" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 28px 48px' }}>
+              {children}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Dashboard = ({ onNavigate }) => {
+      const daysUntil = Math.ceil((new Date(client.nextCollection) - new Date()) / 86400000);
+      const stats = [
+        { label: 'Plan', value: client.plan === 'annual' ? 'Annual' : 'Monthly', icon: 'doc' },
+        { label: 'Status', value: 'Active', icon: 'check' },
+        { label: 'Paid Through', value: formatDate(client.paidThrough), icon: 'calendar' },
+        { label: 'Collection Day', value: client.collectionDay, icon: 'truck' },
+      ];
+
+      return (
+        <div>
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>Good morning, {client.name.split(' ')[0]} 👋</h1>
+            <p style={{ margin: 0, color: COLORS.textMuted, fontSize: 15 }}>Here's your waste collection overview</p>
+          </div>
+
+          <div style={{ background: `linear-gradient(135deg, ${COLORS.green700}, ${COLORS.green500})`, borderRadius: 20, padding: '24px 28px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Next Collection</div>
+              <div style={{ color: '#fff', fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em' }}>{formatDate(client.nextCollection)}</div>
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginTop: 4 }}>Place bags at your gate by 8:00 AM</div>
+            </div>
+            <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.12)', borderRadius: 16, padding: '16px 28px' }}>
+              <div style={{ fontSize: 40, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{daysUntil < 0 ? '—' : daysUntil}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{daysUntil < 0 ? 'overdue' : daysUntil === 0 ? 'TODAY' : 'days away'}</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+            {stats.map(s => (
+              <Card key={s.label} padding={18}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.green100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={s.icon} size={16} color={COLORS.green600} />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.textPrimary }}>{s.value}</div>
+              </Card>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            <Card padding={22}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>Recent Collections</div>
+                <button onClick={() => onNavigate('collections')} style={{ background: 'none', border: 'none', color: COLORS.green600, cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit', fontWeight: 600 }}>View all →</button>
+              </div>
+              {MOCK_COLLECTIONS.slice(0,4).map(c => {
+                const cfg = { completed: { label: 'Collected', color: 'green' }, scheduled: { label: 'Scheduled', color: 'blue' }, missed: { label: 'Missed', color: 'red' } }[c.status];
+                return (
+                  <div key={c.date} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${COLORS.border}` }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{formatDate(c.date)}</div>
+                      {c.notes && <div style={{ fontSize: 12, color: COLORS.textMuted }}>{c.notes}</div>}
+                    </div>
+                    <Badge color={cfg.color} dot>{cfg.label}</Badge>
+                  </div>
+                );
+              })}
+            </Card>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Card padding={20} hover onClick={() => onNavigate('invoices')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: COLORS.green100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon name="invoice" size={20} color={COLORS.green600} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>View Invoices</div>
+                    <div style={{ fontSize: 13, color: COLORS.textMuted }}>Payment history & receipts</div>
+                  </div>
+                  <Icon name="chevronRight" size={18} color={COLORS.textMuted} />
+                </div>
+              </Card>
+              <Card padding={20} hover onClick={() => onNavigate('agreement')}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: COLORS.green100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon name="doc" size={20} color={COLORS.green600} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Service Agreement</div>
+                    <div style={{ fontSize: 13, color: COLORS.textMuted }}>Review your contract terms</div>
+                  </div>
+                  <Icon name="chevronRight" size={18} color={COLORS.textMuted} />
+                </div>
+              </Card>
+              <Card padding={20} style={{ background: COLORS.green50, border: `1.5px solid ${COLORS.green200}` }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.green800, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name="bell" size={15} color={COLORS.green600} /> Reminder
+                </div>
+                <div style={{ fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.5 }}>
+                  Monthly payment of <strong>UGX 25,000</strong> is due by <strong>10 May 2026</strong>.<br />Pay via Mobile Money or Bank Transfer.
+                </div>
+                <div style={{ marginTop: 12, fontSize: 12, color: COLORS.textMuted }}>Bank of Africa · 06566780001</div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Collections = () => {
+      const all = [...MOCK_COLLECTIONS, ...Array(4).fill(null).map((_, i) => ({ date: `2026-0${3-Math.floor(i/2)}-${(18 - i*7).toString().padStart(2,'0')}`, status: 'completed', notes: `Collected ${i+1} bag${i>0?'s':''}` }))];
+
+      return (
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>Collections</h1>
+          <p style={{ margin: '0 0 28px', color: COLORS.textMuted, fontSize: 15 }}>Your full collection schedule and history</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 28 }}>
+            {[['Completed', all.filter(c=>c.status==='completed').length, 'green'], ['Scheduled', all.filter(c=>c.status==='scheduled').length, 'blue'], ['Missed', all.filter(c=>c.status==='missed').length, 'red']].map(([l, v, c]) => (
+              <Card key={l} padding={18} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: c === 'green' ? COLORS.green600 : c === 'red' ? COLORS.danger : 'oklch(50% 0.14 240)' }}>{v}</div>
+                <div style={{ fontSize: 13, color: COLORS.textMuted, fontWeight: 600 }}>{l}</div>
+              </Card>
+            ))}
+          </div>
+
+          <Card padding={0}>
+            <div style={{ padding: '18px 22px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: 700, fontSize: 16 }}>Collection Log</div>
+            {all.map((c, i) => {
+              const cfg = { completed: { label: 'Collected', color: 'green', icon: 'check' }, scheduled: { label: 'Upcoming', color: 'blue', icon: 'calendar' }, missed: { label: 'Missed', color: 'red', icon: 'alert' } }[c.status];
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 22px', borderBottom: i < all.length - 1 ? `1px solid ${COLORS.border}` : 'none' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: cfg.color === 'green' ? COLORS.green100 : cfg.color === 'red' ? 'oklch(94% 0.04 25)' : 'oklch(93% 0.06 240)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon name={cfg.icon} size={16} color={cfg.color === 'green' ? COLORS.green600 : cfg.color === 'red' ? COLORS.danger : 'oklch(46% 0.14 240)'} strokeWidth={2.2} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.textPrimary }}>{formatDate(c.date)}</div>
+                    {c.notes && <div style={{ fontSize: 12, color: COLORS.textMuted }}>{c.notes}</div>}
+                  </div>
+                  <Badge color={cfg.color} dot>{cfg.label}</Badge>
+                </div>
+              );
+            })}
+          </Card>
+        </div>
+      );
+    };
+
+    const Invoices = () => {
+      const [selected, setSelected] = React.useState(null);
+      const inv = selected ? MOCK_INVOICES.find(i => i.id === selected) : null;
+
+      if (inv) return (
+        <div>
+          <button onClick={() => setSelected(null)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: COLORS.textSecondary, fontFamily: 'Outfit', fontSize: 14, marginBottom: 24, padding: 0 }}>
+            <Icon name="chevronLeft" size={18} /> Back to Invoices
+          </button>
+          <Card padding={36} style={{ maxWidth: 600 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+              <Logo size="md" />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.textPrimary }}>{inv.id}</div>
+                <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 2 }}>{formatDate(inv.date)}</div>
+                <div style={{ marginTop: 8 }}><Badge color={inv.status === 'paid' ? 'green' : 'yellow'} dot>{inv.status === 'paid' ? 'Paid' : 'Pending'}</Badge></div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: COLORS.textMuted, marginBottom: 4 }}>Billed To</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{inv.client}</div>
+                <div style={{ fontSize: 14, color: COLORS.textSecondary }}>{inv.address}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: COLORS.textMuted, marginBottom: 4 }}>Service Provider</div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Reusable Resources</div>
+                <div style={{ fontSize: 14, color: COLORS.textSecondary }}>Wankata Village, Mukono</div>
+                <div style={{ fontSize: 13, color: COLORS.textMuted }}>0778527802</div>
+              </div>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                  {['Description','Qty','Unit Price','Amount'].map(h => <th key={h} style={{ padding: '8px 0', fontSize: 12, fontWeight: 700, color: COLORS.textMuted, textAlign: h === 'Description' ? 'left' : 'right', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  <td style={{ padding: '14px 0', fontSize: 14, fontWeight: 600 }}>Garbage Collection ({inv.plan})</td>
+                  <td style={{ padding: '14px 0', fontSize: 14, textAlign: 'right' }}>{inv.qty}</td>
+                  <td style={{ padding: '14px 0', fontSize: 14, textAlign: 'right' }}>{formatUGX(inv.unitPrice)}</td>
+                  <td style={{ padding: '14px 0', fontSize: 14, fontWeight: 600, textAlign: 'right' }}>{formatUGX(inv.subtotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', marginBottom: 28 }}>
+              <div style={{ display: 'flex', gap: 48, fontSize: 14 }}><span style={{ color: COLORS.textMuted }}>Subtotal</span><span>{formatUGX(inv.subtotal)}</span></div>
+              <div style={{ display: 'flex', gap: 48, fontSize: 14 }}><span style={{ color: COLORS.textMuted }}>Tax (6%)</span><span>{formatUGX(inv.tax)}</span></div>
+              <div style={{ display: 'flex', gap: 48, fontSize: 16, fontWeight: 800, paddingTop: 8, borderTop: `2px solid ${COLORS.border}`, width: '100%', justifyContent: 'flex-end' }}><span>Total</span><span style={{ color: COLORS.green700 }}>{formatUGX(inv.total)}</span></div>
+            </div>
+            <div style={{ background: COLORS.green50, borderRadius: 12, padding: '14px 16px' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: COLORS.textMuted, marginBottom: 8 }}>Payment Details</div>
+              <div style={{ fontSize: 13, color: COLORS.textSecondary, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div><strong>Bank:</strong> Bank of Africa · Mukono Countryside Mixed Farm Ltd · A/C 06566780001</div>
+                <div><strong>Mobile Money:</strong> 0778527802 / 0704132691</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 20 }}><Button variant="outline" icon="download" size="sm">Download PDF</Button></div>
+          </Card>
+        </div>
+      );
+
+      return (
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>Invoices</h1>
+          <p style={{ margin: '0 0 28px', color: COLORS.textMuted, fontSize: 15 }}>Your payment history and receipts</p>
+          <Card padding={0}>
+            <div style={{ padding: '18px 22px', borderBottom: `1px solid ${COLORS.border}`, fontWeight: 700, fontSize: 16 }}>All Invoices</div>
+            {MOCK_INVOICES.map((inv, i) => (
+              <div key={inv.id} onClick={() => setSelected(inv.id)} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 22px', borderBottom: i < MOCK_INVOICES.length - 1 ? `1px solid ${COLORS.border}` : 'none', cursor: 'pointer', transition: 'background 0.12s' }}
+                onMouseEnter={e => e.currentTarget.style.background = COLORS.green50}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: COLORS.green100, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon name="invoice" size={18} color={COLORS.green600} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15 }}>{inv.id}</div>
+                  <div style={{ fontSize: 13, color: COLORS.textMuted }}>{formatDate(inv.date)} · {inv.plan} Plan</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.textPrimary }}>{formatUGX(inv.total)}</div>
+                  <Badge color={inv.status === 'paid' ? 'green' : 'yellow'} dot>{inv.status === 'paid' ? 'Paid' : 'Pending'}</Badge>
+                </div>
+                <Icon name="chevronRight" size={18} color={COLORS.textMuted} />
+              </div>
+            ))}
+          </Card>
+        </div>
+      );
+    };
+
+    const Agreement = () => {
+      const sections = [
+        { title: '1. Scope of Services', body: `The Service Provider shall provide municipal/household waste collection and transportation services from the Client's premises. Services include the removal of domestic organic waste, plastics, glass, paper and other domestic/household waste.\n\nExclusions: This contract does not cover construction debris, hazardous chemicals, or medical waste unless specifically agreed upon in writing.` },
+        { title: '2. Collection Schedule & Equipment', body: `Frequency: Collection shall occur once per week on specified days.\n\nContainers/bags: The Client shall use approved 50L or 100L bins and bags or heavy-duty sacks. The Service Provider will provide colour-coded waste bin bags to facilitate waste separation and sorting. Bins may be provided on request at an additional cost.\n\nPlacement: Bins/bags must be placed at the designated "collection point" (usually the gate or roadside) by 8:00 AM on the scheduled day of collection.` },
+        { title: '3. Fees and Payment Terms', body: `The Client shall pay a monthly fee of UGX 25,000 per month (UGX 300,000 annually, paid monthly) or a discounted rate of UGX 240,000 paid once for an annual fee (equivalent to UGX 20,000 per month).\n\nPayments are due by the 10th day of each month. Payments shall be made via Mobile Money, Bank Transfer, or Cash with a valid receipt.\n\nFailure to pay for 3 consecutive months will result in immediate suspension of services.` },
+        { title: '4. Obligations of the Parties', body: `The Client shall ensure waste is properly sorted (where required) using provided garbage bins/bags or as guided. They are also to ensure safe storage to prevent littering by stray animals, and that waste bags/bins are accessible on collection days.\n\nThe Service Provider shall ensure all collected waste is transported and disposed of at their waste handling site or as directed by government to an authorised dumpsite or recycling facility (Katikolo in Mukono, Buyala in Kampala or any other designated facility).` },
+        { title: '5. Duration and Termination', body: `This agreement shall remain in force for a period of 5 years (60 months), renewable upon mutual consent.\n\nEither party may terminate this agreement by giving 3 months (90 days) written notice.` },
+        { title: '6. Governing Law', body: `This agreement shall be governed by and construed in accordance with the Laws of Uganda, including the National Environment (Waste Management) Regulations and local government ordinances.` },
+      ];
+
+      return (
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>Service Agreement</h1>
+          <p style={{ margin: '0 0 28px', color: COLORS.textMuted, fontSize: 15 }}>Household Garbage Collection — Terms & Conditions</p>
+          <Card padding={32} style={{ maxWidth: 700 }}>
+            <div style={{ textAlign: 'center', paddingBottom: 28, borderBottom: `2px solid ${COLORS.border}`, marginBottom: 28 }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}><Logo size="md" /></div>
+              <div style={{ marginTop: 12, fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6 }}>
+                Wankata Village, Nakisunga Sub-county · P.O. Box 151132, Kampala<br />
+                0778527802 / 0704132691 · briantwesigye@gmail.com
+              </div>
+              <div style={{ marginTop: 16, fontWeight: 800, fontSize: 18, color: COLORS.textPrimary, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Service Agreement for Household Garbage Collection</div>
+            </div>
+
+            <div style={{ background: COLORS.green50, border: `1.5px solid ${COLORS.green200}`, borderRadius: 12, padding: '14px 18px', marginBottom: 28, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <Icon name="check" size={16} color={COLORS.green600} strokeWidth={2.5} />
+              <div style={{ fontSize: 14, color: COLORS.textSecondary, lineHeight: 1.6 }}>
+                <strong style={{ color: COLORS.green700 }}>Your agreement is active.</strong> Signed for client <strong>{client.name}</strong>, {client.address}. Valid for 5 years from commencement.
+              </div>
+            </div>
+
+            {sections.map(s => (
+              <div key={s.title} style={{ marginBottom: 24 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.green800, marginBottom: 8 }}>{s.title}</div>
+                {s.body.split('\n\n').map((para, i) => (
+                  <p key={i} style={{ margin: '0 0 8px', fontSize: 14, color: COLORS.textSecondary, lineHeight: 1.7 }}>{para}</p>
+                ))}
+              </div>
+            ))}
+
+            <div style={{ borderTop: `2px solid ${COLORS.border}`, paddingTop: 20, marginTop: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, fontSize: 14 }}>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>For the Service Provider:</div>
+                  <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 8, color: COLORS.textMuted }}>Brian Twesigye · RERU</div>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>For the Client:</div>
+                  <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 8, color: COLORS.textMuted }}>{client.name}</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      );
+    };
+
+    // ─── APP ROOT + NAVIGATION TOOLBAR ─────────────────────────────────────────
+    const App = () => {
+      const [page, setPage] = React.useState(() => localStorage.getItem('reru_page') || 'home');
+      const [authMode, setAuthMode] = React.useState('login');
+      const [tweakOpen, setTweakOpen] = React.useState(false);
+
+      const navigate = (p) => {
+        if (p === 'login' || p === 'register') { setAuthMode(p); setPage('auth'); localStorage.setItem('reru_page', 'auth'); }
+        else { setPage(p); localStorage.setItem('reru_page', p); }
+        window.scrollTo(0, 0);
+      };
+
+      const appPages = ['dashboard','collections','invoices','agreement'];
+      const inApp = appPages.includes(page);
+
+      const content = (() => {
+        if (page === 'home') return <LandingPage onNavigate={navigate} />;
+        if (page === 'auth') return <AuthScreen onNavigate={navigate} mode={authMode} />;
+        if (inApp) return (
+          <AppShell page={page} onNavigate={navigate}>
+            {page === 'dashboard' && <Dashboard onNavigate={navigate} />}
+            {page === 'collections' && <Collections />}
+            {page === 'invoices' && <Invoices />}
+            {page === 'agreement' && <Agreement />}
+          </AppShell>
+        );
+        return <LandingPage onNavigate={navigate} />;
+      })();
+
+      return (
+        <>
+          {content}
+
+          {!tweakOpen && (
+            <button onClick={() => setTweakOpen(true)} title="Navigate between screens"
+              style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9998, width: 44, height: 44, borderRadius: '50%', background: COLORS.green700, color: '#fff', border: 'none', cursor: 'pointer', boxShadow: '0 6px 20px rgba(0,80,0,0.24)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="settings" size={18} color="#fff" />
+            </button>
+          )}
+
+          {tweakOpen && (
+            <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: '#fff', borderRadius: 16, boxShadow: '0 8px 40px rgba(0,0,0,0.16)', border: `1.5px solid ${COLORS.border}`, padding: 20, width: 280, fontFamily: 'Outfit' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.textPrimary }}>Navigate</div>
+                <button onClick={() => setTweakOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: COLORS.textMuted }}><Icon name="x" size={18} /></button>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Go to screen</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {[['home','Home'],['auth','Login'],['dashboard','Dashboard'],['collections','Collections'],['invoices','Invoices'],['agreement','Agreement']].map(([p,l]) => (
+                    <button key={p} onClick={() => navigate(p)} style={{ padding: '5px 11px', borderRadius: 8, border: `1.5px solid ${page === p ? COLORS.green600 : COLORS.border}`, background: page === p ? COLORS.green100 : '#fff', color: page === p ? COLORS.green700 : COLORS.textSecondary, fontFamily: 'Outfit', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
