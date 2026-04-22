@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:oklch(97% 0.01 145);padding:20px;display:flex;flex-direction:column;gap:16px}
+.label{font-size:11px;font-weight:700;color:oklch(62% 0.03 145);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="label">Badges</div>
+<div class="row">
+  <span class="badge" style="background:oklch(92% 0.06 145);color:oklch(38% 0.13 145)"><span class="dot" style="background:oklch(38% 0.13 145)"></span>Active</span>
+  <span class="badge" style="background:oklch(92% 0.06 145);color:oklch(38% 0.13 145)">Collected</span>
+  <span class="badge" style="background:oklch(92% 0.06 145);color:oklch(38% 0.13 145)"><span class="dot" style="background:oklch(38% 0.13 145)"></span>Paid</span>
+  <span class="badge" style="background:oklch(93% 0.06 240);color:oklch(38% 0.14 240)"><span class="dot" style="background:oklch(38% 0.14 240)"></span>Scheduled</span>
+  <span class="badge" style="background:oklch(95% 0.05 25);color:oklch(52% 0.18 25)"><span class="dot" style="background:oklch(52% 0.18 25)"></span>Missed</span>
+  <span class="badge" style="background:oklch(95% 0.06 85);color:oklch(42% 0.14 75)"><span class="dot" style="background:oklch(42% 0.14 75)"></span>Pending</span>
+  <span class="badge" style="background:oklch(93% 0.01 145);color:oklch(62% 0.03 145)">Inactive</span>
+</div>
+
+<div class="label">Overline Pills (section labels)</div>
+<div class="row">
+  <span style="background:oklch(92% 0.06 145);color:oklch(38% 0.13 145);padding:4px 14px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Our Services</span>
+  <span style="background:oklch(92% 0.06 145);color:oklch(38% 0.13 145);padding:4px 14px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Pricing</span>
+  <span style="background:oklch(68% 0.16 160);color:#fff;padding:4px 16px;border-radius:99px;font-size:12px;font-weight:700">Best Value</span>
+</div>
+
+<div class="label">Input — Default / Focus / Error / Hint</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:560px">
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <label style="font-size:13px;font-weight:600;color:oklch(42% 0.04 145);letter-spacing:0.01em">Phone Number <span style="color:oklch(52% 0.18 25)">*</span></label>
+    <div style="position:relative">
+      <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:oklch(62% 0.03 145)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.64A2 2 0 012 .91h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      <input placeholder="07XX XXX XXX" style="width:100%;padding:11px 14px 11px 38px;font-family:'Outfit';font-size:15px;border-radius:10px;border:1.5px solid oklch(90% 0.03 145);background:oklch(97% 0.01 145);outline:none;color:oklch(14% 0.02 145)"/>
+    </div>
+    <div style="font-size:12px;color:oklch(62% 0.03 145)">Used for login and notifications</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <label style="font-size:13px;font-weight:600;color:oklch(42% 0.04 145)">Focused state</label>
+    <input value="0778527802" style="width:100%;padding:11px 14px;font-family:'Outfit';font-size:15px;border-radius:10px;border:1.5px solid oklch(54% 0.16 145);background:#fff;outline:none;color:oklch(14% 0.02 145)"/>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <label style="font-size:13px;font-weight:600;color:oklch(42% 0.04 145)">Error state</label>
+    <input value="" placeholder="Required" style="width:100%;padding:11px 14px;font-family:'Outfit';font-size:15px;border-radius:10px;border:1.5px solid oklch(52% 0.18 25);background:oklch(97% 0.01 145);outline:none"/>
+    <div style="font-size:12px;color:oklch(52% 0.18 25)">Phone number is required</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <label style="font-size:13px;font-weight:600;color:oklch(42% 0.04 145)">Select</label>
+    <select style="width:100%;padding:11px 14px;font-family:'Outfit';font-size:15px;border-radius:10px;border:1.5px solid oklch(90% 0.03 145);background:oklch(97% 0.01 145);outline:none;color:oklch(14% 0.02 145)">
+      <option>Zone A</option><option>Zone B</option><option>Zone C</option>
+    </select>
+  </div>
+</div>
+</body></html>

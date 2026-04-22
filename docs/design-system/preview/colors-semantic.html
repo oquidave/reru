@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:#fff;padding:20px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:center}
+.chip{border-radius:8px;padding:10px 14px;min-width:120px;display:flex;flex-direction:column;gap:2px}
+.chip .n{font-size:11px;font-weight:700;letter-spacing:0.03em}
+.chip .v{font-size:9px;font-weight:500;opacity:0.7}
+.divider{font-size:11px;font-weight:700;color:oklch(62% 0.03 145);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+.example{padding:10px 14px;border-radius:8px;font-size:13px;font-weight:500;flex:1}
+</style>
+</head>
+<body>
+<div class="divider">Surface & Background</div>
+<div class="row">
+  <div class="chip" style="background:oklch(97% 0.01 145);border:1.5px solid oklch(90% 0.03 145)"><div class="n" style="color:oklch(28% 0.10 145)">--color-bg</div><div class="v" style="color:oklch(42% 0.08 145)">Page background</div></div>
+  <div class="chip" style="background:#fff;border:1.5px solid oklch(90% 0.03 145)"><div class="n" style="color:oklch(28% 0.10 145)">--color-surface</div><div class="v" style="color:oklch(42% 0.08 145)">Card / modal</div></div>
+  <div class="chip" style="background:oklch(96% 0.03 145);border:1.5px solid oklch(90% 0.03 145)"><div class="n" style="color:oklch(28% 0.10 145)">--color-green-50</div><div class="v" style="color:oklch(42% 0.08 145)">Section alt bg</div></div>
+  <div class="chip" style="background:oklch(28% 0.10 145)"><div class="n" style="color:#fff">--color-green-900</div><div class="v" style="color:rgba(255,255,255,0.6)">Sidebar / hero</div></div>
+</div>
+
+<div class="divider">Text</div>
+<div class="row">
+  <div class="example" style="background:oklch(97% 0.01 145)">
+    <div style="color:oklch(14% 0.02 145);font-weight:700;font-size:14px">text-primary — Headings</div>
+    <div style="color:oklch(42% 0.04 145);font-size:13px;margin-top:3px">text-secondary — Body copy and descriptions</div>
+    <div style="color:oklch(62% 0.03 145);font-size:12px;margin-top:3px">text-muted — Hints, captions, placeholders</div>
+  </div>
+  <div class="example" style="background:oklch(28% 0.10 145)">
+    <div style="color:#fff;font-weight:700;font-size:14px">White on dark</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:3px">Secondary on dark — 75% opacity</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:3px">Muted on dark — 50% opacity</div>
+  </div>
+</div>
+
+<div class="divider">Border</div>
+<div class="row">
+  <div class="chip" style="border:1.5px solid oklch(90% 0.03 145);background:#fff"><div class="n" style="color:oklch(42% 0.08 145)">--color-border</div><div class="v" style="color:oklch(62% 0.03 145)">Default 1.5px</div></div>
+  <div class="chip" style="border:1.5px solid oklch(82% 0.10 145);background:#fff"><div class="n" style="color:oklch(38% 0.13 145)">green-200</div><div class="v" style="color:oklch(62% 0.03 145)">Hover / tint border</div></div>
+  <div class="chip" style="border:1.5px solid oklch(54% 0.16 145);background:#fff"><div class="n" style="color:oklch(38% 0.13 145)">green-500</div><div class="v" style="color:oklch(62% 0.03 145)">Focus border</div></div>
+</div>
+
+<div class="divider">Status Pairs</div>
+<div class="row">
+  <div class="chip" style="background:oklch(92% 0.06 145)"><div class="n" style="color:oklch(38% 0.13 145)">success</div><div class="v" style="color:oklch(46% 0.12 145)">bg + text</div></div>
+  <div class="chip" style="background:oklch(95% 0.05 25)"><div class="n" style="color:oklch(52% 0.18 25)">error</div><div class="v" style="color:oklch(52% 0.18 25)">bg + text</div></div>
+  <div class="chip" style="background:oklch(95% 0.06 85)"><div class="n" style="color:oklch(42% 0.14 75)">warning</div><div class="v" style="color:oklch(42% 0.14 75)">bg + text</div></div>
+  <div class="chip" style="background:oklch(93% 0.06 240)"><div class="n" style="color:oklch(38% 0.14 240)">info</div><div class="v" style="color:oklch(38% 0.14 240)">bg + text</div></div>
+  <div class="chip" style="background:oklch(93% 0.01 145)"><div class="n" style="color:oklch(62% 0.03 145)">neutral</div><div class="v" style="color:oklch(62% 0.03 145)">bg + text</div></div>
+</div>
+</body></html>

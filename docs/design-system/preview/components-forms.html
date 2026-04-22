@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:oklch(97% 0.01 145);padding:20px;display:flex;flex-direction:column;gap:12px}
+.label{font-size:11px;font-weight:700;color:oklch(62% 0.03 145);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.alert{border-radius:12px;padding:13px 16px;display:flex;gap:10px;align-items:flex-start;max-width:400px}
+</style>
+</head>
+<body>
+<div class="label">Callout / Alert Variants</div>
+<div class="row" style="flex-direction:column">
+  <!-- Success -->
+  <div class="alert" style="background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(46% 0.15 145)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="font-size:14px;color:oklch(42% 0.04 145);line-height:1.5"><strong style="color:oklch(38% 0.13 145)">Your agreement is active.</strong> Signed for client Stephen Obbo, Mparo Drive, New Nsasa Estate.</div>
+  </div>
+  <!-- Info -->
+  <div class="alert" style="background:oklch(93% 0.06 240);border:1.5px solid oklch(82% 0.08 240)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(46% 0.14 240)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <div style="font-size:14px;color:oklch(38% 0.14 240);line-height:1.5">Demo: use any phone + PIN to sign in as <strong>Stephen Obbo</strong></div>
+  </div>
+  <!-- Warning / reminder -->
+  <div class="alert" style="background:oklch(96% 0.03 145);border:1.5px solid oklch(82% 0.10 145)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="oklch(46% 0.15 145)" stroke-width="1.8" stroke-linecap="round" style="flex-shrink:0;margin-top:2px"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <div>
+      <div style="font-weight:700;font-size:14px;color:oklch(38% 0.13 145);margin-bottom:3px">Reminder</div>
+      <div style="font-size:13px;color:oklch(42% 0.04 145);line-height:1.5">Monthly payment of <strong>UGX 25,000</strong> is due by <strong>10 May 2026</strong>.</div>
+    </div>
+  </div>
+  <!-- Error -->
+  <div class="alert" style="background:oklch(95% 0.05 25);border:1.5px solid oklch(82% 0.06 25)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="oklch(52% 0.18 25)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div style="font-size:14px;color:oklch(52% 0.18 25);line-height:1.5">Phone number is required</div>
+  </div>
+</div>
+
+<div class="label" style="margin-top:4px">Inline Table Row (list item pattern)</div>
+<div style="background:#fff;border-radius:14px;border:1.5px solid oklch(90% 0.03 145);overflow:hidden;max-width:480px">
+  <div style="padding:14px 18px;border-bottom:1px solid oklch(90% 0.03 145);font-weight:700;font-size:15px">Collection Log</div>
+  <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid oklch(90% 0.03 145)">
+    <div style="width:34px;height:34px;border-radius:50%;background:oklch(92% 0.06 145);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="oklch(46% 0.15 145)" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div style="flex:1"><div style="font-weight:600;font-size:14px">15 Apr 2026</div><div style="font-size:12px;color:oklch(62% 0.03 145)">Collected 2 bags</div></div>
+    <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:oklch(92% 0.06 145);color:oklch(38% 0.13 145);font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:oklch(38% 0.13 145)"></span>Collected</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;padding:13px 18px;background:oklch(96% 0.03 145)">
+    <div style="width:34px;height:34px;border-radius:50%;background:oklch(95% 0.05 25);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="oklch(52% 0.18 25)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div style="flex:1"><div style="font-weight:600;font-size:14px">25 Mar 2026</div><div style="font-size:12px;color:oklch(62% 0.03 145)">Client not home</div></div>
+    <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:oklch(95% 0.05 25);color:oklch(52% 0.18 25);font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:oklch(52% 0.18 25)"></span>Missed</span>
+  </div>
+</div>
+</body></html>

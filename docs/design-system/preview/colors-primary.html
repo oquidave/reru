@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:#fff;padding:20px;display:flex;flex-direction:column;gap:20px}
+.row{display:flex;gap:0;border-radius:12px;overflow:hidden;border:1.5px solid oklch(90% 0.03 145)}
+.swatch{flex:1;padding:18px 14px 14px;display:flex;flex-direction:column;justify-content:flex-end;min-height:90px}
+.swatch .name{font-size:11px;font-weight:700;opacity:0.85;letter-spacing:0.04em;margin-bottom:2px}
+.swatch .val{font-size:10px;opacity:0.65;font-weight:500}
+.label{font-size:11px;font-weight:700;color:oklch(62% 0.03 145);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="label">Green Scale — hue 145</div>
+<div class="row">
+  <div class="swatch" style="background:oklch(28% 0.10 145)"><div class="name" style="color:#fff">green-900</div><div class="val" style="color:rgba(255,255,255,0.6)">oklch(28% 0.10 145)</div></div>
+  <div class="swatch" style="background:oklch(38% 0.13 145)"><div class="name" style="color:#fff">green-700</div><div class="val" style="color:rgba(255,255,255,0.6)">oklch(38% 0.13 145)</div></div>
+  <div class="swatch" style="background:oklch(46% 0.15 145)"><div class="name" style="color:#fff">green-600</div><div class="val" style="color:rgba(255,255,255,0.6)">oklch(46% 0.15 145)</div></div>
+  <div class="swatch" style="background:oklch(54% 0.16 145)"><div class="name" style="color:#fff">green-500</div><div class="val" style="color:rgba(255,255,255,0.6)">oklch(54% 0.16 145)</div></div>
+  <div class="swatch" style="background:oklch(64% 0.15 145)"><div class="name" style="color:#fff">green-400</div><div class="val" style="color:rgba(255,255,255,0.6)">oklch(64% 0.15 145)</div></div>
+  <div class="swatch" style="background:oklch(82% 0.10 145)"><div class="name" style="color:oklch(28% 0.10 145)">green-200</div><div class="val" style="color:oklch(42% 0.08 145)">oklch(82% 0.10 145)</div></div>
+  <div class="swatch" style="background:oklch(92% 0.06 145)"><div class="name" style="color:oklch(28% 0.10 145)">green-100</div><div class="val" style="color:oklch(42% 0.08 145)">oklch(92% 0.06 145)</div></div>
+  <div class="swatch" style="background:oklch(96% 0.03 145);border-left:1px solid oklch(90% 0.03 145)"><div class="name" style="color:oklch(28% 0.10 145)">green-50</div><div class="val" style="color:oklch(42% 0.08 145)">oklch(96% 0.03 145)</div></div>
+</div>
+
+<div class="label" style="margin-top:4px">Accent · Danger · Warning</div>
+<div class="row">
+  <div class="swatch" style="background:oklch(68% 0.16 160)"><div class="name" style="color:#fff">accent</div><div class="val" style="color:rgba(255,255,255,0.65)">oklch(68% 0.16 160)</div></div>
+  <div class="swatch" style="background:oklch(52% 0.18 25)"><div class="name" style="color:#fff">danger</div><div class="val" style="color:rgba(255,255,255,0.65)">oklch(52% 0.18 25)</div></div>
+  <div class="swatch" style="background:oklch(72% 0.16 75)"><div class="name" style="color:oklch(28% 0.10 75)">warning</div><div class="val" style="color:rgba(0,0,0,0.45)">oklch(72% 0.16 75)</div></div>
+  <div class="swatch" style="background:oklch(93% 0.06 240)"><div class="name" style="color:oklch(32% 0.14 240)">info-bg</div><div class="val" style="color:oklch(42% 0.10 240)">oklch(93% 0.06 240)</div></div>
+</div>
+</body></html>

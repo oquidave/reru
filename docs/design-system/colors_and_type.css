@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════════════
+   RERU DESIGN SYSTEM — CSS Custom Properties
+   Reusable Resources · Nsasa Estate, Mukono, Uganda
+   Source: reru-app/components/shared.jsx
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Google Font import ─────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* ── Color Tokens ────────────────────────────────────────────────── */
+:root {
+  /* Green scale — OKLCH hue 145 */
+  --color-green-900: oklch(28% 0.10 145);   /* Sidebar, hero, footer */
+  --color-green-700: oklch(38% 0.13 145);   /* Primary buttons, active states, headings */
+  --color-green-600: oklch(46% 0.15 145);   /* Button hover, icon color, link hover */
+  --color-green-500: oklch(54% 0.16 145);   /* Input focus border, mid-range accent */
+  --color-green-400: oklch(64% 0.15 145);   /* Gradient end, decorative */
+  --color-green-200: oklch(82% 0.10 145);   /* Hover border, tint border, step circles */
+  --color-green-100: oklch(92% 0.06 145);   /* Icon wells, badge bg, tint bg */
+  --color-green-50:  oklch(96% 0.03 145);   /* Section alt bg, card tint, hover rows */
+
+  /* Semantic surface colors */
+  --color-bg:        oklch(97% 0.01 145);   /* Page background */
+  --color-surface:   #ffffff;               /* Card / modal surface */
+  --color-border:    oklch(90% 0.03 145);   /* Default border */
+
+  /* Semantic text colors */
+  --color-text-primary:   oklch(14% 0.02 145);  /* Headings, strong body */
+  --color-text-secondary: oklch(42% 0.04 145);  /* Body text, descriptions */
+  --color-text-muted:     oklch(62% 0.03 145);  /* Captions, placeholders, hints */
+
+  /* Status colors */
+  --color-accent:   oklch(68% 0.16 160);    /* Best value badge, highlight tag */
+  --color-danger:   oklch(52% 0.18 25);     /* Error, missed collection, destructive */
+  --color-warning:  oklch(72% 0.16 75);     /* Pending payment, warning state */
+
+  /* Status semantic bg/text pairs */
+  --color-success-bg:   oklch(92% 0.06 145);
+  --color-success-text: oklch(38% 0.13 145);
+  --color-error-bg:     oklch(95% 0.05 25);
+  --color-error-text:   oklch(52% 0.18 25);
+  --color-warning-bg:   oklch(95% 0.06 85);
+  --color-warning-text: oklch(42% 0.14 75);
+  --color-info-bg:      oklch(93% 0.06 240);
+  --color-info-text:    oklch(38% 0.14 240);
+  --color-gray-bg:      oklch(93% 0.01 145);
+  --color-gray-text:    oklch(62% 0.03 145);
+}
+
+/* ── Typography Tokens ───────────────────────────────────────────── */
+:root {
+  /* Font families */
+  --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+  /* Note: Outfit is the sole typeface. No serif or mono in RERU's design system. */
+
+  /* Font weights */
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:    700;
+  --font-weight-extrabold: 800;
+
+  /* Type scale */
+  --text-xs:   11px;   /* Overlines, table headers (uppercase + tracking) */
+  --text-sm:   12px;   /* Captions, hints, footer text, badge labels */
+  --text-base: 13px;   /* Nav items, small labels, button-sm */
+  --text-md:   14px;   /* Body text, list items, table cells */
+  --text-lg:   15px;   /* Card titles, primary body, button-md */
+  --text-xl:   16px;   /* Section sub-headings, button-lg */
+  --text-2xl:  18px;   /* Agreement section titles, pricing plan names */
+  --text-3xl:  22px;   /* Invoice IDs, auth headings */
+  --text-4xl:  26px;   /* Dashboard page H1 */
+  --text-5xl:  32px;   /* Section H2 (landing) */
+  --text-6xl:  40px;   /* Pricing amounts, countdown number */
+  --text-hero: clamp(36px, 6vw, 64px);  /* Hero H1 */
+
+  /* Line heights */
+  --leading-tight:  1.1;    /* Display headings */
+  --leading-snug:   1.2;    /* Card headings */
+  --leading-normal: 1.5;    /* UI text */
+  --leading-relaxed:1.6;    /* Body / descriptions */
+  --leading-loose:  1.7;    /* Agreement body, long-form text */
+
+  /* Letter spacing */
+  --tracking-tight:   -0.03em;  /* Hero headings */
+  --tracking-snug:    -0.02em;  /* Section H2, dashboard H1 */
+  --tracking-normal:   0;
+  --tracking-wide:     0.01em;  /* Input labels */
+  --tracking-wider:    0.06em;  /* Stat card labels (uppercase) */
+  --tracking-widest:   0.08em;  /* Overline pills, table headers */
+}
+
+/* ── Spacing Scale ───────────────────────────────────────────────── */
+:root {
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-2-5: 10px;
+  --space-3:  12px;
+  --space-3-5: 14px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-9:  36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-18: 72px;
+  --space-20: 80px;
+}
+
+/* ── Border Radius ───────────────────────────────────────────────── */
+:root {
+  --radius-sm:   8px;    /* Small icon wells (34px), sidebar user card corner */
+  --radius-md:   10px;   /* Buttons, input fields, nav items, small icon wells (44px) */
+  --radius-lg:   12px;   /* Icon wells (larger), badge containers, payment detail box */
+  --radius-xl:   16px;   /* Default cards */
+  --radius-2xl:  20px;   /* Large cards (pricing, hero banner) */
+  --radius-full: 99px;   /* Pills, badges, avatars step circles use 50% */
+  --radius-circle: 50%;  /* Avatars, step number circles */
+}
+
+/* ── Shadows ─────────────────────────────────────────────────────── */
+:root {
+  --shadow-card:         0 1px 4px rgba(0,0,0,0.04);
+  --shadow-card-hover:   0 4px 20px rgba(0,80,0,0.08);
+  --shadow-card-raised:  0 8px 40px rgba(0,80,0,0.18);
+  /* Note: Depth hierarchy uses border-color escalation before shadow stacking */
+}
+
+/* ── Transitions ─────────────────────────────────────────────────── */
+:root {
+  --transition-fast: all 0.15s ease;
+  /* All interactive elements use this single transition value. No springs/bounces. */
+}
+
+/* ── Border widths ───────────────────────────────────────────────── */
+:root {
+  --border-default: 1.5px;  /* Card outer, input, button outline */
+  --border-divider: 1px;    /* Dividers inside cards, table rows */
+  --border-heavy:   2px;    /* Table header underlines, section dividers */
+}
+
+/* ── Semantic Type Styles ────────────────────────────────────────── */
+/* Apply these utility classes in production code */
+
+.reru-display {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-extrabold);
+  font-size: var(--text-hero);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text-primary);
+  text-wrap: balance;
+}
+
+.reru-h1 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-extrabold);
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-snug);
+  color: var(--color-text-primary);
+}
+
+.reru-h2 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-extrabold);
+  font-size: var(--text-5xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-snug);
+  color: var(--color-text-primary);
+}
+
+.reru-card-title {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  color: var(--color-text-primary);
+}
+
+.reru-body {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-secondary);
+}
+
+.reru-label {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-secondary);
+}
+
+.reru-overline {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  color: var(--color-green-700);
+}
+
+.reru-caption {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+}
+
+/* ── Base resets ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text-primary); }

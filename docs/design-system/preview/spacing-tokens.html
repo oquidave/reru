@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:#fff;padding:20px;display:flex;flex-direction:column;gap:20px}
+.section-label{font-size:11px;font-weight:700;color:oklch(62% 0.03 145);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.row{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.token{display:flex;flex-direction:column;align-items:center;gap:6px}
+.token .name{font-size:10px;font-weight:600;color:oklch(62% 0.03 145);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="section-label">Spacing Scale (4px base unit)</div>
+<div style="display:flex;gap:0;align-items:flex-end;padding:0 0 8px">
+  <div style="display:flex;gap:2px;align-items:flex-end">
+  <div class="token" style="gap:4px">
+    <div style="width:4px;background:oklch(54% 0.16 145);border-radius:2px;height:4px"></div>
+    <div class="name">4</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:8px;background:oklch(54% 0.16 145);border-radius:2px;height:8px"></div>
+    <div class="name">8</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:12px;background:oklch(54% 0.16 145);border-radius:2px;height:12px"></div>
+    <div class="name">12</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:16px;background:oklch(54% 0.16 145);border-radius:2px;height:16px"></div>
+    <div class="name">16</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:20px;background:oklch(54% 0.16 145);border-radius:2px;height:20px"></div>
+    <div class="name">20</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:24px;background:oklch(54% 0.16 145);border-radius:2px;height:24px"></div>
+    <div class="name">24</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:28px;background:oklch(54% 0.16 145);border-radius:2px;height:28px"></div>
+    <div class="name">28</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:32px;background:oklch(54% 0.16 145);border-radius:2px;height:32px"></div>
+    <div class="name">32</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:48px;background:oklch(54% 0.16 145);border-radius:2px;height:48px"></div>
+    <div class="name">48</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:64px;background:oklch(54% 0.16 145);border-radius:2px;height:64px"></div>
+    <div class="name">64</div></div>
+  <div class="token" style="gap:4px;margin-left:6px">
+    <div style="width:72px;background:oklch(54% 0.16 145);border-radius:2px;height:72px"></div>
+    <div class="name">72</div></div>
+  </div>
+</div>
+
+<div class="section-label">Border Radius</div>
+<div class="row">
+  <div class="token"><div style="width:48px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:8px"></div><div class="name">8px<br/>sm</div></div>
+  <div class="token"><div style="width:48px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:10px"></div><div class="name">10px<br/>md<br/>(btn/input)</div></div>
+  <div class="token"><div style="width:48px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:12px"></div><div class="name">12px<br/>lg</div></div>
+  <div class="token"><div style="width:48px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:16px"></div><div class="name">16px<br/>xl<br/>(card)</div></div>
+  <div class="token"><div style="width:48px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:20px"></div><div class="name">20px<br/>2xl<br/>(hero card)</div></div>
+  <div class="token"><div style="width:56px;height:32px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:99px"></div><div class="name">99px<br/>full<br/>(pill)</div></div>
+  <div class="token"><div style="width:36px;height:36px;background:oklch(92% 0.06 145);border:1.5px solid oklch(82% 0.10 145);border-radius:50%"></div><div class="name">50%<br/>circle<br/>(avatar)</div></div>
+</div>
+
+<div class="section-label">Shadow System</div>
+<div class="row">
+  <div class="token" style="align-items:stretch">
+    <div style="width:120px;height:52px;background:#fff;border-radius:16px;border:1.5px solid oklch(90% 0.03 145);box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:center;font-size:11px;color:oklch(62% 0.03 145)">Default card</div>
+    <div class="name" style="font-size:9px;max-width:120px;text-align:center">0 1px 4px rgba(0,0,0,0.04)</div>
+  </div>
+  <div class="token" style="align-items:stretch">
+    <div style="width:120px;height:52px;background:#fff;border-radius:16px;border:1.5px solid oklch(82% 0.10 145);box-shadow:0 4px 20px rgba(0,80,0,0.08);display:flex;align-items:center;justify-content:center;font-size:11px;color:oklch(62% 0.03 145)">Hover card</div>
+    <div class="name" style="font-size:9px;max-width:120px;text-align:center">0 4px 20px rgba(0,80,0,0.08)</div>
+  </div>
+  <div class="token" style="align-items:stretch">
+    <div style="width:120px;height:52px;background:oklch(38% 0.13 145);border-radius:16px;box-shadow:0 8px 40px rgba(0,80,0,0.18);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,0.8)">Raised card</div>
+    <div class="name" style="font-size:9px;max-width:120px;text-align:center">0 8px 40px rgba(0,80,0,0.18)</div>
+  </div>
+</div>
+
+<div class="section-label">Border Weights</div>
+<div class="row">
+  <div class="token"><div style="width:80px;height:36px;border-radius:10px;border:1.5px solid oklch(90% 0.03 145);background:oklch(97% 0.01 145)"></div><div class="name">1.5px default</div></div>
+  <div class="token"><div style="width:80px;height:36px;border-radius:10px;border:1px solid oklch(90% 0.03 145);background:oklch(97% 0.01 145)"></div><div class="name">1px divider</div></div>
+  <div class="token"><div style="width:80px;height:2px;background:oklch(90% 0.03 145);margin-top:17px"></div><div class="name">2px heavy</div></div>
+</div>
+</body></html>
