@@ -32,6 +32,16 @@ Examples of what to use the MCP server for:
 - Creating or modifying RLS policies
 - Managing storage buckets
 
+## Design System
+
+Always follow the design system in `docs/design-system/` when writing any app components or UI code.
+
+- **Tokens:** Use CSS custom properties from `colors_and_type.css` for all colors, typography, spacing, shadows, and border radii. Never hardcode raw values.
+- **Components:** Reference `preview/` pages for expected appearance and variants of buttons, forms, cards, badges, and navigation.
+- **Guidelines:** Follow the principles in `README.md` for tone, iconography, and visual style.
+
+When in doubt, check the design system before inventing new styles.
+
 ## Development Guidelines
 
 - Use the Supabase client library (`@supabase/supabase-js`) for all database/auth/storage interactions in application code.
