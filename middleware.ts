@@ -19,8 +19,14 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
+  // Inject the current pathname as a request header so server-component layouts
+  // can read it via headers(). This is needed because layouts have no other way
+  // to know their current path (no usePathname on the server).
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+
   let response = NextResponse.next({
-    request: { headers: request.headers },
+    request: { headers: requestHeaders },
   })
 
   const supabase = createServerClient(
@@ -33,12 +39,13 @@ export async function middleware(request: NextRequest) {
         },
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
+          // Preserve the x-pathname header when Next.js recreates the response
+          response = NextResponse.next({ request: { headers: requestHeaders } })
           response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({ request: { headers: request.headers } })
+          response = NextResponse.next({ request: { headers: requestHeaders } })
           response.cookies.set({ name, value: '', ...options })
         },
       },
@@ -54,7 +61,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
-    // Admin route guard — check role from profiles table
+    // Admin route guard — verify role from profiles table
     if (request.nextUrl.pathname.startsWith('/dashboard/admin')) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -70,6 +77,26 @@ export async function middleware(request: NextRequest) {
 
   if (request.nextUrl.pathname.startsWith('/auth')) {
     if (user) {
+      // Check if this is an admin-only user and send them to the right place
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
+        // Confirm they have no client record before redirecting to admin
+        const { data: client } = await supabase
+          .from('reru_clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!client) {
+          return NextResponse.redirect(new URL('/dashboard/admin', request.url))
+        }
+      }
+
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
