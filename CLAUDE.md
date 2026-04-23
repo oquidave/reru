@@ -1,5 +1,20 @@
 # Reru — Project Instructions
 
+## Project Rules — Read First
+
+**Before writing any code**, read `docs/PROJECT_RULES.md` in full. It is the authoritative reference for this project and covers:
+
+- Package manager (pnpm), TypeScript strictness, formatting, and pre-commit hooks
+- Design system usage, responsive breakpoints, UI state patterns, and accessibility requirements
+- API-first architecture, standardized response shapes, and authentication flow
+- Database migration workflow, RLS policy patterns, and Supabase client usage rules
+- Security requirements: rate limiting, HTTP headers, safe error handling, PIN hashing, secrets management
+- Testing approach (Vitest, TDD, test isolation), git workflow, and deployment checklist
+
+If any instruction in this file conflicts with `docs/PROJECT_RULES.md`, the project rules take precedence.
+
+---
+
 ## Backend: Supabase
 
 This project uses [Supabase](https://supabase.com) as the backend (database, auth, storage).
