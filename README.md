@@ -81,12 +81,19 @@ reru/
 │   ├── auth/                     # Login & registration pages
 │   │   ├── login/
 │   │   └── register/
-│   ├── dashboard/                # Authenticated client area
+│   ├── (user-dashboard)/dashboard/   # Authenticated client area
 │   │   ├── page.tsx              # Dashboard home
 │   │   ├── collections/          # Collection history
 │   │   ├── invoices/             # Invoice list + detail
 │   │   ├── agreement/            # Service agreement
-│   │   └── layout.tsx            # Dashboard shell (sidebar + nav)
+│   │   └── layout.tsx            # Client dashboard shell (sidebar + nav)
+│   ├── (admin-dashboard)/dashboard/admin/  # Admin area (independent layout chain)
+│   │   ├── page.tsx              # Admin overview
+│   │   ├── clients/              # Client management
+│   │   ├── collections/          # Collections management
+│   │   ├── invoices/             # Invoice management
+│   │   ├── schedule/             # Today's schedule
+│   │   └── layout.tsx            # Admin shell (sidebar + nav)
 │   ├── api/                      # API routes (server-side mutations)
 │   │   └── auth/register/
 │   ├── globals.css
@@ -116,6 +123,24 @@ reru/
 ├── index.html                    # Original HTML prototype (reference only)
 └── CLAUDE.md                     # AI agent project instructions
 ```
+
+## User Roles
+
+RERU has two roles: `client` (default) and `admin`/`superadmin`.
+
+A database trigger (`on_auth_user_created_create_profile`) automatically creates a `profiles` row with `role: 'client'` for every new auth user. **No manual step is needed for client accounts.**
+
+### Creating an admin user
+
+1. Create the user in the [Supabase Auth dashboard](https://supabase.com/dashboard/project/crjgohirzgkxatywuvoz/auth/users) (or invite them via email).
+2. Copy the new user's UUID from the Auth dashboard.
+3. Promote them to admin via SQL:
+
+```sql
+UPDATE profiles SET role = 'admin' WHERE user_id = '<uuid>';
+```
+
+Admin users must **not** have a `reru_clients` record — the app uses the absence of a client record combined with the `admin` role to route them to `/dashboard/admin` instead of the client dashboard.
 
 ## Development Workflow
 
