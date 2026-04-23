@@ -41,9 +41,20 @@ export async function POST(request: Request) {
       })
 
     if (clientError) {
-      // Roll back the auth user if client insert fails
       await supabase.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json({ error: 'Failed to create client profile' }, { status: 500 })
+    }
+
+    // Create profiles row for role management
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({ user_id: authData.user.id, role: 'client', full_name: name })
+
+    if (profileError) {
+      // Roll back both auth user and client row
+      await supabase.from('reru_clients').delete().eq('user_id', authData.user.id)
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
