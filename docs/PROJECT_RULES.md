@@ -1,10 +1,15 @@
-# UCI IVR Project Rules
+# RERU Project Rules
+
+## Project Overview
+
+RERU (Reusable Resources) is a household waste collection and recycling service management platform for Nsasa Estate, Mukono District, Uganda. It is a B2C subscription SaaS built on **Next.js 15**, **Supabase** (database, auth, storage), and deployed on **Vercel**. The Supabase backend is live — there is no mock data layer.
+
+---
 
 ## Package Manager
 
 **ALWAYS use pnpm** for all package management operations:
 
-### Installation
 ```bash
 pnpm install              # Install all dependencies
 pnpm add <package>        # Add a dependency
@@ -12,193 +17,338 @@ pnpm add -D <package>     # Add a dev dependency
 pnpm remove <package>     # Remove a dependency
 ```
 
-### Running Scripts
 ```bash
 pnpm dev                  # Start development server
 pnpm build                # Build for production
 pnpm start                # Start production server
 pnpm lint                 # Run ESLint
+pnpm format               # Run Prettier
+pnpm type-check           # Run tsc --noEmit
+pnpm audit                # Check for dependency vulnerabilities
 ```
 
-### Why pnpm?
-- Faster installation than npm/yarn
-- Efficient disk space usage (content-addressable storage)
-- Strict dependency resolution
-- Better monorepo support
+Run `pnpm audit` before adding new dependencies and address any high/critical advisories before merging.
+
+---
 
 ## Design System
 
 ### Reference Documents
-- **ALWAYS refer to** `design-system.md` when building UI elements
-- **Brand Colors**: Blue #0066CC (primary), Green #10B981 (secondary), Amber #F59E0B (alerts)
-- Use Shadcn/UI components for consistency
-- Follow UCI IVR design patterns and guidelines for healthcare applications
+- **ALWAYS refer to** `docs/design-system/README.md` before building any UI
+- **ALWAYS use CSS custom properties** from `docs/design-system/colors_and_type.css` — never hardcode raw color, spacing, or radius values
+- **Component previews** are in `docs/design-system/preview/` — check these for expected appearance of buttons, forms, cards, badges, and navigation
+- **Full click-through prototype** is at `docs/design-system/ui_kits/web-app/index.html`
+
+### Brand Tokens
+- **Primary:** Forest green `green700` — buttons, active nav, headings on light
+- **Dark surfaces:** `green900` — sidebar, hero, footer
+- **Tints:** `green100` / `green50` — icon wells, card backgrounds
+- **Accent:** `oklch(68% 0.16 160)` — "Best Value" badges and highlight tags only
+- **Danger:** `oklch(52% 0.18 25)` — errors, missed collection status
+- **Warning:** `oklch(72% 0.16 75)` — pending payment status
+- **Font:** [Outfit](https://fonts.google.com/specimen/Outfit) — weights 400, 500, 600, 700, 800
+
+### Content Rules
+- RERU uses **Radix UI primitives via the Shadcn/UI pattern** (`components/ui/`) for base elements (Button, Input, Select, etc.)
+- Custom domain components (cards, collection rows, invoice views) are built on top of these primitives following the design system
+- All colors, spacing, radii, and shadows via CSS custom properties from `colors_and_type.css` — do not override with hardcoded values
+- Sentence case for all body text and UI labels; ALL CAPS only for overline pills and table headers
+- Currency written as `UGX X,XXX` — never "Shs" or "USh"
+- Dates in Ugandan format: `22 Apr 2026` (day first, month abbreviated)
+
+### Responsive Breakpoints
+- Mobile: ≤ 700px — single column, hamburger nav, full-width cards
+- Desktop: > 700px — sidebar visible, multi-column grids
+- Always design and test mobile-first
+
+### UI States (required for every interactive feature)
+Every data-driven UI section must handle all four states:
+
+| State | What to render |
+|---|---|
+| **Loading** | Skeleton placeholder matching the shape of the loaded content |
+| **Empty** | Friendly illustration or message + a clear call to action |
+| **Error** | Human-readable message (not raw error text) + a retry action |
+| **Success** | The actual data |
+
+Never show a blank screen or raw JavaScript error objects to users.
+
+### Form Validation UX
+- Validate on blur for individual fields (show error when the user leaves the field)
+- Re-validate on submit for all fields
+- Show inline error messages below each field using the `danger` color token
+- Never clear a field's error while the user is still typing — only clear on blur after fixing
+
+### Accessibility
+- Target **WCAG 2.1 AA** compliance
+- All interactive elements must be keyboard-navigable (tab order, Enter/Space triggers)
+- All images and icons must have descriptive `alt` text or `aria-label`
+- Color alone must never be the only indicator of state — always pair with text or icon
+- Minimum touch target size: 44×44px on mobile
+- Use semantic HTML elements (`<button>`, `<nav>`, `<main>`, `<section>`) over generic `<div>` wrappers
+
+### Animation
+- Transitions: `all 0.15s ease` — no bounce, no spring, no entrance animations
+- No page transitions or slide animations in MVP
+- State changes only (hover, focus, active) — not decorative motion
+
+---
 
 ## Product Requirements
 
-### Reference Documents
-- **ALWAYS refer to** `docs/Breast Cancer  IVR product requirement document.md`
-- Contains complete feature specifications and user workflows
-- Defines business logic and validation rules
-- Source of truth for feature implementation
+- **ALWAYS refer to** `docs/PRD.md` for feature specifications and user workflows
+- Contains data models, business logic, pricing, geographic scope, and roadmap
+- Source of truth for what is in scope for v1 vs. future versions
+
+---
 
 ## Language
 
-**UCI IVR uses TypeScript** for all new code.
+**RERU uses TypeScript** for all new code.
+
+### TypeScript Strictness
+`tsconfig.json` must include:
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
+```
+
+- **Never use `any`** — use `unknown` and narrow it, or define a proper type
+- All function parameters and return types must be explicitly typed
+- Use `type` for object shapes, `interface` only when extension is intentional
 
 ### File Extensions
-- **Pages**: `page.tsx` (React components)
-- **Layouts**: `layout.tsx` (React components)
-- **API Routes**: `route.ts` (TypeScript)
-- **Components**: `kebab-case.tsx` (e.g., `participant-card.tsx`)
-- **Utilities**: `kebab-case.ts` (e.g., `format-phone.ts`)
-- **Actions**: `entity-actions.ts` (e.g., `participant-actions.ts`)
+- **Pages**: `page.tsx`
+- **Layouts**: `layout.tsx`
+- **API Routes**: `route.ts`
+- **Components**: `kebab-case.tsx` (e.g., `invoice-card.tsx`)
+- **Utilities**: `kebab-case.ts` (e.g., `format-ugx.ts`)
+- **Actions**: `entity-actions.ts` (e.g., `invoice-actions.ts`)
 - **Providers**: `kebab-case.tsx` (e.g., `auth-provider.tsx`)
+- **Types**: `kebab-case.types.ts` (e.g., `invoice.types.ts`)
+
+---
 
 ## Code Style
 
-### File Naming
-- Use TypeScript extensions (`.ts`, `.tsx`)
-- **Pages**: `page.tsx` (Next.js requirement)
-- **Layouts**: `layout.tsx` (Next.js requirement)
-- **API Routes**: `route.ts` (Next.js requirement)
-- **Components**: `kebab-case.tsx` (e.g., `call-history-table.tsx`)
-- **Utilities**: `kebab-case.ts` (e.g., `format-date.ts`)
-- **Actions**: `entity-actions.ts` (e.g., `schedule-actions.ts`)
+### Formatter
+- Use **Prettier** for all formatting — do not manually format code
+- Prettier config in `.prettierrc` at repo root
+- ESLint and Prettier must not conflict — use `eslint-config-prettier`
+
+### Pre-commit Hooks
+Run `lint-staged` via Husky on every commit:
+```json
+// package.json lint-staged config
+{
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,css,md}": ["prettier --write"]
+  }
+}
+```
+Never skip hooks with `--no-verify`.
 
 ### Component Structure
 - **All components must be Server Components by default**
-- Add `'use client'` directive only when absolutely necessary:
-  - Using React hooks (useState, useEffect, etc.)
-  - Browser-only APIs (localStorage, window, etc.)
+- Add `'use client'` only when absolutely necessary:
+  - Using React hooks (`useState`, `useEffect`, etc.)
+  - Browser-only APIs (`localStorage`, `window`, etc.)
   - Event handlers and interactivity
-- Keep components small and focused
-- Use Shadcn/UI components for consistency
+- Keep components small and focused — if a component exceeds ~150 lines, split it
+- Use Next.js `loading.tsx` for route-level loading states
+- Use Next.js `error.tsx` for route-level error boundaries
 
 ### Import Paths
 Use path aliases configured in `tsconfig.json`:
-```javascript
+```typescript
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { SEVERITY_LEVELS } from '@/lib/constants/severity'
+import { formatUGX } from '@/lib/utils/format-ugx'
 ```
+
+### Environment Variable Access
+- Create a `lib/env.ts` that imports and validates all env vars at startup using Zod
+- Import env vars from `lib/env.ts` throughout the app — never from `process.env` directly
+- This catches missing variables at build time rather than at runtime
+
+```typescript
+// lib/env.ts
+import { z } from 'zod'
+
+const envSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // ...
+})
+
+export const env = envSchema.parse(process.env)
+```
+
+---
 
 ## API-First Development
 
 ### Architecture Principles
-- **All Supabase database operations MUST happen on the server-side** unless explicitly required on client
+- **All Supabase database operations MUST happen server-side** unless explicitly required on client
 - Use API routes (`app/api/**/route.ts`) for all data mutations and sensitive operations
-- Client components should only call API endpoints, never Supabase directly
-- Server components can use Supabase server client for read operations
+- Client components call API endpoints via `fetch()`, never Supabase directly
+- Server components can use the Supabase server client for read operations
 
-### API Route Structure
+### Standardized API Response Shape
+All API routes MUST return one of these two shapes:
+
 ```typescript
-// app/api/resource/route.ts
+// Success
+{ ok: true, data: T }
+
+// Error
+{ ok: false, error: string }  // human-readable message only — never raw error.message
+```
+
+Never expose internal error details (database errors, stack traces, table names) in API responses. Log the full error server-side; return only a safe message to the client:
+
+```typescript
+// app/api/collections/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
-    // Validate input
-    // Perform database operations
-    // Return response
+
+    // 1. Authenticate
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (!user || authError) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 2. Validate input with Zod
+    const body = await req.json()
+    const parsed = collectionSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: 'Invalid request body' }, { status: 400 })
+    }
+
+    // 3. Database operation (RLS enforces access control)
+    const { data, error } = await supabase.from('collections').insert(parsed.data).select().single()
+    if (error) {
+      console.error('[POST /api/collections]', error) // log full error server-side
+      return NextResponse.json({ ok: false, error: 'Failed to create collection' }, { status: 500 })
+    }
+
     return NextResponse.json({ ok: true, data })
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    console.error('[POST /api/collections] Unexpected error', err)
+    return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })
   }
 }
 ```
 
-### Components structure
+### Authentication Check in Every Mutating Route
+Every `POST`, `PUT`, `PATCH`, `DELETE` route must verify the user session as the first step. Return `401` before doing anything else if the session is missing.
 
-The architecture should follow  API-first principles by using client components, server components and API routes appropriately:
+### Input Validation Scope
+Use **Zod** to validate all untrusted input at the API boundary:
+- Request body (`req.json()`)
+- URL query params (`req.nextUrl.searchParams`)
+- Path params (where applicable)
 
-Client components call API routes via fetch()
-Server components (page.tsx) use Supabase server client for read operations
-API routes handle all mutations and enforce authentication/RLS
-No server actions violating the API-first approach
+Never trust client-supplied data. Validate before touching the database.
 
-Here's an example of the various components
+### Component Architecture
 
+```
 ✅ page.tsx (Server Component)
    └─ Direct Supabase queries for initial data (auth + reads)
    └─ Passes props to client components
 
-✅ *-client.tsx (Client Components)  
+✅ *-client.tsx (Client Components)
    └─ fetch() calls to API routes
    └─ router.refresh() for cache revalidation
+   └─ Handles loading / error / empty states
 
-✅ /api/schedules/* (API Routes)
-   └─ Authentication via createClient()
+✅ /api/resource/* (API Routes)
+   └─ Auth check first
+   └─ Zod validation
    └─ RLS enforcement via authenticated Supabase client
-   └─ Service role client ONLY for specific administrative tasks
+   └─ Service role client ONLY for specific admin tasks
+   └─ Safe error responses (no internal details)
+```
 
-### Benefits
-- Automatic cookie management for auth
-- Centralized validation and error handling
-- Better security (credentials never exposed to client)
-- Easier testing and debugging
-- Consistent API contracts
+---
 
 ## Database
 
 ### Supabase Project Configuration
-- **Project Name**: supabase-vpnsage-com
-- **Project ID**: `crjgohirzgkxatywuvoz` ⚠️ ALWAYS use this project ID for Supabase MCP operations
-- **PostgreSQL Version**: Latest (via Supabase)
-- **Region**: US
+- **Project URL**: `https://crjgohirzgkxatywuvoz.supabase.co`
+- **Project ID**: `crjgohirzgkxatywuvoz` ⚠️ ALWAYS use this for Supabase MCP operations
+- **Region**: AWS us-east-1
 
-### Reference Documents
-- **ALWAYS refer to** `supabase-schema.sql` when writing database queries or logic
-- **ALWAYS refer to** `supabase-rls-policies.sql` when implementing data access
-- All tables are prefixed with `uci_`
-- Use Supabase MCP server to interact with the database
-- All database tables are prefixed with "uci_". Therefore when creating a new table, you must always add this prefix.
-- Always ask me to confirm when performing actions that alter data in the database such as inserts, updates and delete.
-- Always refer to the project database schema supabase-schema.sql and the row level security file supabase-rls-policies.sql when creating database-related code to avoid schema-related errors.
+### Table Naming
+- No table prefix — use plain descriptive names: `clients`, `invoices`, `collections`, `profiles`
+- Use the **Supabase MCP server** for all database operations (schema changes, migrations, queries, RLS policies, storage buckets)
+- Always confirm with the user before running any INSERT, UPDATE, or DELETE operations on production data
+
+### Migration Workflow
+1. Write all schema changes as SQL migration files in `supabase/migrations/`
+2. Name migrations with timestamp prefix: `20260423_add_collections_table.sql`
+3. Apply via Supabase MCP server or `supabase db push` using `POSTGRES_URL_NON_POOLING`
+4. Never modify the production schema directly through the Supabase dashboard UI
+5. Keep migrations idempotent where possible (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`)
+6. Always update the schema reference file after a migration
 
 ### Supabase Client Usage
-- **Client components**: Should NOT use Supabase directly - call API routes instead
+- **Client components**: Must NOT use Supabase directly — call API routes instead
 - **Server components**: Use `lib/supabase/server.ts` for read operations
 - **API routes**: Use `lib/supabase/server.ts` for all operations
 - **Middleware**: Use `lib/supabase/middleware.ts`
 
-### RLS Policies - Auth-Driven Helper Functions Pattern
+### Supabase Storage
+- Use Supabase Storage for file uploads (e.g., invoice PDFs when generated)
+- Enforce storage RLS — never make buckets fully public unless assets are truly public (e.g., brand images)
+- Use signed URLs for private files; keep expiry short (< 1 hour)
+- Name buckets descriptively: `invoices`, `assets`
 
-**CRITICAL**: UCI IVR uses auth-driven helper functions to avoid `auth.uid()` returning NULL in server-side contexts (Next.js App Router + Supabase SSR).
+---
 
-#### Core Principles
-1. **Never use GUCs** (Grand Unified Configuration variables) or manual session parameters
-2. **Always use `TO authenticated`** in all policies to ensure proper auth context
-3. **Centralize authorization logic** in helper functions within the `app` schema
-4. **Use `SECURITY DEFINER`** for helper functions to bypass RLS during lookups
-5. **Never bypass RLS** in application code - let database enforce security
+## RLS Policies — Auth-Driven Helper Functions
 
-#### Helper Functions (app schema)
+**CRITICAL**: RERU uses auth-driven helper functions to avoid `auth.uid()` returning NULL in server-side contexts (Next.js App Router + Supabase SSR).
+
+### Core Principles
+1. Never use GUCs or manual session parameters
+2. Always use `TO authenticated` in all policies
+3. Centralize authorization logic in helper functions in the `app` schema
+4. Use `SECURITY DEFINER` for helper functions to bypass RLS during lookups
+5. Never bypass RLS in application code
+6. RLS must be **enabled** on every table that contains user data — verify after every migration
+
+### Helper Functions (app schema)
 All helper functions MUST follow this pattern:
 ```sql
 CREATE OR REPLACE FUNCTION app.function_name()
 RETURNS <type> AS $$
   SELECT column
   FROM table
-  WHERE supabase_user_id = auth.uid()  -- Uses Supabase's auth context
+  WHERE supabase_user_id = auth.uid()
   LIMIT 1
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 ```
 
-**Available Helpers**:
-- `app.current_user_id()` - Returns uci_profiles.id for authenticated user
-- `app.current_user_role()` - Returns role (admin, manager, viewer) for authenticated user
-- `app.is_admin()` - Boolean: user has admin role
-- `app.is_manager()` - Boolean: user has manager or admin role
-- `app.can_manage_participants()` - Boolean: user has permission to manage participants
-- `app.can_manage_flows()` - Boolean: user has permission to manage question flows
-- `app.can_view_reports()` - Boolean: user has permission to view reports
+**RERU Helpers**:
+- `app.current_client_id()` — Returns `clients.id` for the authenticated user
+- `app.current_user_role()` — Returns role (`client`, `admin`, `superadmin`) for the authenticated user
+- `app.is_admin()` — Boolean: user has `admin` or `superadmin` role
 
-#### Policy Structure
-All RLS policies MUST follow this exact pattern:
-
+### Policy Structure
 ```sql
 -- [Description of what this policy does]
 -- Logic: [Business logic explanation]
@@ -206,139 +356,156 @@ All RLS policies MUST follow this exact pattern:
 CREATE POLICY "Descriptive policy name"
 ON table_name
 FOR [SELECT|INSERT|UPDATE|DELETE]
-TO authenticated  -- ← MANDATORY: Ensures auth context exists
-USING (column = app.helper_function())
-WITH CHECK (column = app.helper_function());  -- For INSERT/UPDATE
-```
-
-#### Policy Naming Convention
-- Use descriptive names: `"Admins can view all participants"`
-- Start with subject: `"Admins"`, `"Managers"`, `"Viewers"`
-- Include action: `"can view"`, `"can create"`, `"can update"`
-- Be specific: `"all participants"`, `"own profile"`, `"severity alerts"`
-
-#### Required Comments
-Every policy MUST have:
-1. **Description comment**: What the policy allows
-2. **Logic comment**: Business reasoning behind the policy
-3. **Helper comment**: Which helper function is used and why
-
-Example:
-```sql
--- Admins can view all participant call history
--- Logic: Admin users need full visibility into patient monitoring data for oversight
--- Uses app.is_admin() helper to verify admin status
-CREATE POLICY "Admins can view all call sessions"
-ON uci_call_sessions
-FOR SELECT
 TO authenticated
-USING (app.is_admin());
+USING (column = app.helper_function())
+WITH CHECK (column = app.helper_function());
 ```
 
-#### Why This Approach?
+### Policy Naming Convention
+- Start with subject: `"Clients"`, `"Admins"`
+- Include action: `"can view"`, `"can create"`, `"can update"`
+- Be specific: `"own invoices"`, `"all collections"`
 
-**Security Benefits**:
-- ✅ No GUCs to manipulate or forget to set
-- ✅ `auth.uid()` controlled by Supabase, not user code
-- ✅ `SECURITY DEFINER` prevents lookup bypass
-- ✅ `TO authenticated` ensures auth context always present
-- ✅ Zero boilerplate in API routes
-
-**Performance Benefits**:
-- ✅ `STABLE` keyword allows PostgreSQL to cache results
-- ✅ Indexed lookups on `id` column
-- ✅ No additional RPC calls for session setup
-
-**Maintainability Benefits**:
-- ✅ Authorization logic centralized in helper functions
-- ✅ Clean, readable policies
-- ✅ Business rules documented with comments
-- ✅ Change once, affects all policies using that helper
-
-#### Creating New Policies
-
-**Step 1**: Determine what data the policy protects
-**Step 2**: Identify which user role needs access
-**Step 3**: Choose or create appropriate helper function
-**Step 4**: Write policy with `TO authenticated` and comprehensive comments
-**Step 5**: Grant execute permissions on any new helper functions
-**Step 6**: Update `supabase-rls-policies.sql`
-
-#### Forbidden Patterns
-
-❌ **Never use policies without `TO authenticated`**:
+### Forbidden Patterns
 ```sql
--- BAD: Defaults to 'public' role, causes auth.uid() NULL issues
-CREATE POLICY "bad_policy" ON table FOR SELECT USING (...);
-```
+-- BAD: No TO authenticated
+CREATE POLICY "bad" ON table FOR SELECT USING (...);
 
-❌ **Never use inline subqueries instead of helpers**:
-```sql
--- BAD: Repeated logic, hard to maintain
-USING (user_id IN (SELECT id FROM uci_profiles WHERE supabase_user_id = auth.uid()));
+-- BAD: Inline subquery instead of helper
+USING (client_id IN (SELECT id FROM clients WHERE supabase_user_id = auth.uid()));
 
--- GOOD: Use helper function
-USING (user_id = app.current_user_id());
-```
-
-❌ **Never use GUCs or manual session variables**:
-```sql
--- BAD: Requires manual setup, manipulation risk
-USING (organization_id = current_setting('app.organization_id')::uuid);
-
--- GOOD: Use auth-driven helper
-USING (app.is_admin());
-```
-
-❌ **Never create policies without comments**:
-```sql
--- BAD: No documentation of business logic
+-- BAD: No comments
 CREATE POLICY "policy" ON table USING (...);
-
--- GOOD: Comprehensive comments
--- Managers can update participant information
--- Logic: Managers maintain patient contact details and tags
--- Uses app.is_manager() helper to verify manager status
-CREATE POLICY "Managers can update participants" ON uci_participants ...
 ```
 
-#### Reference Files
-- **Schema**: `supabase-schema.sql`
-- **RLS Policies**: `supabase-rls-policies.sql`
-- **Example**: See any policy in `supabase-rls-policies.sql` for proper pattern
+---
 
 ## Authentication
 
 ### Protected Routes
 - Dashboard routes: `/dashboard/*`
-- Admin routes: `/dashboard/admin/*` (admin only)
+- Admin routes: `/dashboard/admin/*` (admin/superadmin only)
 - Middleware automatically redirects unauthenticated users to `/login`
 
+### Middleware (`middleware.ts`)
+The middleware must:
+1. Refresh the Supabase auth session on every request
+2. Redirect unauthenticated users attempting protected routes to `/login`
+3. Redirect authenticated users hitting `/login` or `/register` to `/dashboard`
+4. Set HTTP security headers on every response (see Security section)
+
 ### Role-Based Access
-- Check user role from `uci_profiles` table
-- Show/hide features based on role (admin, manager, viewer)
-- Use constants from `lib/constants/roles.ts`
+- Roles: `client`, `admin`, `superadmin`
+- Check user role from `profiles` table
+- Enforce role checks server-side (in API routes and server components) — client-side checks are UI-only and must not be the sole gate
+
+### PIN Security
+- 4-digit PINs must be hashed with **bcrypt** (cost factor ≥ 12) before storage — never store plaintext PINs
+- Rate-limit PIN login attempts: max 5 failures per phone number per 15 minutes; lock the account temporarily after that
+- Enforce HTTPS everywhere — never transmit PINs over plain HTTP
+
+---
+
+## Security
+
+### HTTP Security Headers
+Set these headers in `middleware.ts` on every response:
+```typescript
+const securityHeaders = {
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' fonts.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co",
+}
+```
+
+### Rate Limiting
+Apply rate limiting on all public-facing mutation endpoints:
+- `/api/auth/login` — 5 attempts per phone per 15 minutes
+- `/api/auth/register` — 3 attempts per IP per hour
+- SMS-sending endpoints — 3 SMS per phone per hour
+- Use Supabase's built-in Auth rate limits plus application-level checks
+
+### Input Security
+- **Zod** validates all API input at the boundary — request body, query params
+- Set explicit `max` lengths on all string fields to prevent oversized payloads
+- Use parameterized queries only — the Supabase client handles this; never concatenate user input into SQL strings
+- Reject requests with `Content-Type` other than `application/json` on JSON endpoints
+
+### Error Handling
+- Never expose raw `error.message`, stack traces, or database internals in API responses
+- Log full errors server-side with `console.error` (picked up by Vercel logs)
+- Return only a human-readable, non-leaky message to the client:
+  ```typescript
+  // BAD
+  return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // GOOD
+  console.error('[context]', error)
+  return NextResponse.json({ ok: false, error: 'Something went wrong. Please try again.' }, { status: 500 })
+  ```
+
+### Secrets Management
+- All secrets in `.env.local` (local) and Vercel environment variables (production)
+- Never commit `.env.local` — it is gitignored
+- Maintain a `.env.example` file with all required variable names but no values
+- Rotate the `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_JWT_SECRET` if they are ever accidentally exposed
+- The service role key bypasses RLS — use it only for admin-level server operations; never in client-accessible code
+
+### Audit Logging
+Log all sensitive admin operations to an `audit_logs` table:
+- Account suspension / reactivation
+- Invoice status changes (mark paid, cancel)
+- Manual collection record edits
+- Admin role assignments
+
+---
+
+## SMS Notifications
+
+- Use **Africa's Talking API** for SMS — Uganda coverage
+- SMS use cases: collection day reminders, payment due reminders, collection confirmation
+- This is SMS only — no IVR or voice call functionality
+- Always validate and normalize Ugandan phone numbers to international format (`+256XXXXXXXXX`) before sending
+- Log all sent SMS (recipient, message type, timestamp, delivery status) — never log message body if it contains sensitive data
+
+---
+
+## Payment Integration
+
+- **v2 feature** — MTN MoMo API and Airtel Money API (see `docs/PRD.md` §5.3)
+- Manual payment methods currently: Mobile Money transfer, Bank of Africa transfer, cash
+- Payment due: 10th of each month; suspend service after 3 consecutive missed payments
+- All payment status changes must go through an API route — never allow the client to self-declare payment
+
+---
 
 ## Environment Variables
 
-### Required Variables
+### Required Variables (match `.env.local`)
 ```env
-NEXT_PUBLIC_SUPABASE_URL=         # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=    # Public anon key
-SUPABASE_SERVICE_ROLE_KEY=        # Private service role key (server-only)
+NEXT_PUBLIC_SUPABASE_URL=         # Supabase project URL (client-safe)
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # Anon/public key (client-safe)
+SUPABASE_SERVICE_ROLE_KEY=        # Service role key (server-only, never expose to client)
+SUPABASE_JWT_SECRET=              # JWT secret for token verification
+POSTGRES_URL=                     # Pooled Postgres connection string
+POSTGRES_URL_NON_POOLING=         # Direct Postgres connection (for migrations)
+AFRICAS_TALKING_USERNAME=         # Africa's Talking username (SMS)
+AFRICAS_TALKING_API_KEY=          # Africa's Talking API key (SMS)
 NEXT_PUBLIC_BASE_URL=             # App base URL
-AFRICAS_TALKING_USERNAME=         # Africa's Talking username
-AFRICAS_TALKING_API_KEY=          # Africa's Talking API key
-AFRICAS_TALKING_SHORTCODE=        # IVR shortcode
-MAILGUN_API_KEY=                  # Mailgun API key
-MAILGUN_DOMAIN=                   # Mailgun domain
-MAILGUN_FROM_EMAIL=               # Sender email
-BLOB_READ_WRITE_TOKEN=            # Vercel Blob token
 ```
 
-### Naming Convention
-- Public (client-side): `NEXT_PUBLIC_*`
-- Private (server-only): No prefix
+### Rules
+- Public (client-side safe): `NEXT_PUBLIC_*` prefix
+- Private (server-only): no prefix
+- Never hardcode credentials in source — always read from `lib/env.ts`
+- Never commit `.env.local` to git
+- Keep `.env.example` up to date with every new variable added
+- Validate all env vars at startup via `lib/env.ts` (Zod schema) so missing vars fail at build, not runtime
+
+---
 
 ## Git Workflow
 
@@ -357,252 +524,127 @@ Follow conventional commits:
 - `test:` Test changes
 - `chore:` Build/config changes
 
+### Pull Requests
+- All changes to `main` must go through a PR — no direct pushes
+- PR must pass: lint, type-check, and tests before merge
+- PR description must reference the relevant PRD section or issue
+- Keep PRs small and focused — one feature or fix per PR
+
+---
+
 ## Testing
 
+### Test Runner
+Use **Vitest** for unit and integration tests (compatible with Next.js, faster than Jest).
+
 ### Test-Driven Development (TDD)
-- **Follow TDD methodology for all API routes**
+- Follow TDD for all API routes
 - Write unit tests BEFORE implementing features
 - Test file naming: `route.test.ts` alongside `route.ts`
 
 ### Testing Approach
-1. **Write the test first**: Define expected behavior
-2. **Run the test**: Watch it fail (red)
-3. **Implement the feature**: Make the test pass (green)
-4. **Refactor**: Improve code while keeping tests green
+1. Write the test first — define expected behavior
+2. Run the test — watch it fail (red)
+3. Implement the feature — make it pass (green)
+4. Refactor — improve code while keeping tests green
+
+### Test Isolation
+- **Never run tests against the production Supabase project**
+- Use a local Supabase instance (`supabase start`) or a dedicated test project for integration tests
+- Mock the Supabase client in unit tests; use the real client only in integration tests
 
 ### API Route Testing
 ```typescript
-// app/api/participants/route.test.ts
+// app/api/invoices/route.test.ts
 import { POST } from './route'
 
-describe('POST /api/participants', () => {
-  it('should return 400 if phone number is missing', async () => {
-    const req = new Request('http://localhost/api/participants', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'Test' })
-    })
+describe('POST /api/invoices', () => {
+  it('should return 401 for unauthenticated requests', async () => {
+    const req = new Request('http://localhost/api/invoices', { method: 'POST' })
     const res = await POST(req)
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
   })
 
-  it('should return 401 for unauthorized users', async () => {
+  it('should return 400 if required fields are missing', async () => {
     // Test implementation
   })
 
-  it('should return 200 and create participant on success', async () => {
+  it('should return 200 and create invoice on success', async () => {
     // Test implementation
   })
 })
 ```
 
-### Test Coverage
-- **All API routes must have unit tests**
-- Test happy paths and error cases
-- Test input validation
-- Test authentication/authorization
-- Test database operations (use test database or mocks)
-
-### Test Files
-- Place tests next to the files they test
-- Use `.test.ts` or `.spec.ts` extension
-- Test utilities in `lib/utils/`
-- Test critical business logic
-
-### Running Tests
-```bash
-pnpm test              # Run all tests
-pnpm test:watch        # Run tests in watch mode
-pnpm test:coverage     # Generate coverage report
-```
+### What Must Be Tested
+- All API routes: happy path, missing auth, invalid input, database error
+- Utility functions: `formatUGX`, `formatDate`, phone normalization
+- Zod schemas: valid and invalid inputs
 
 ### Manual API Testing with curl
 
-**IMPORTANT**: Use curl with cookie-based authentication for manual testing of authenticated API endpoints during development.
-
-#### Cookie-Based Authentication Flow
-
-**Step 1: Login and Save Session Cookies**
+**Step 1: Login and save session cookies**
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"}' \
-  -c .auth-cookies.txt \
-  -v
+  -d '{"phone":"0701234567","pin":"1234"}' \
+  -c .auth-cookies.txt -v
 ```
 
-**Step 2: Make Authenticated Requests**
+**Step 2: Make authenticated requests**
 ```bash
-# Use saved cookies for authenticated requests
-curl -X GET http://localhost:3000/api/YOUR_ENDPOINT \
-  -b .auth-cookies.txt \
-  -v
-
-# Example: Test authenticated endpoint
-curl -X GET http://localhost:3000/api/test-auth \
-  -b .auth-cookies.txt
-
-# Example: POST request with authentication
-curl -X POST http://localhost:3000/api/participants \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test Participant","phone":"+256700000000"}' \
-  -b .auth-cookies.txt
+curl -X GET http://localhost:3000/api/collections \
+  -b .auth-cookies.txt -v
 ```
 
-**Step 3: Logout (Clear Session)**
+**Step 3: Logout**
 ```bash
 curl -X POST http://localhost:3000/api/auth/logout \
-  -b .auth-cookies.txt \
-  -c .auth-cookies.txt
+  -b .auth-cookies.txt -c .auth-cookies.txt
 ```
 
-**Step 4: Verify Logout**
-```bash
-# Should return 401 Unauthorized
-curl -X GET http://localhost:3000/api/test-auth \
-  -b .auth-cookies.txt
-```
+`.auth-cookies.txt` is gitignored — never commit it.
 
-#### Cookie File Management
-- Cookies are stored in `.auth-cookies.txt` (gitignored)
-- Cookie file is reusable across multiple requests
-- Cookie expires after 400 days or on logout
-- Format: Netscape HTTP Cookie File (curl native format)
-
-#### Testing Best Practices
-1. **Always use `-v` flag** during development to see full HTTP headers
-2. **Store cookies in `.auth-cookies.txt`** for session persistence
-3. **Test authentication flow**: Login → Authenticated Request → Logout → Verify Unauthorized
-4. **Test authorization levels**: Verify admin, manager, and viewer role access
-5. **Test error cases**: Invalid credentials, missing fields, unauthorized access
-
-#### Example Test Workflow
-```bash
-# 1. Login as admin
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@uci.org","password":"adminpass"}' \
-  -c .auth-cookies.txt
-
-# 2. Test admin-only endpoint (should succeed)
-curl -X POST http://localhost:3000/api/participants \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","phone":"+256700000000"}' \
-  -b .auth-cookies.txt
-
-# 3. Logout
-curl -X POST http://localhost:3000/api/auth/logout \
-  -b .auth-cookies.txt \
-  -c .auth-cookies.txt
-
-# 4. Verify logout (should return 401)
-curl -X GET http://localhost:3000/api/participants \
-  -b .auth-cookies.txt
-```
-
-#### Why This Approach?
-- ✅ **Session Persistence**: Cookies saved to file, reusable across requests
-- ✅ **No Token Management**: No need to manually extract/pass tokens
-- ✅ **Production-Like**: Mirrors browser authentication behavior
-- ✅ **Simple**: One login, multiple authenticated requests
-- ✅ **Secure**: HttpOnly cookies, SameSite protection
-- ✅ **Fast**: Quick validation without running full test suite
+---
 
 ## Deployment
 
 ### Vercel
-- Main branch auto-deploys to production
+- Main branch auto-deploys to production (`https://reru.odukar.com`)
 - Pull requests create preview deployments
-- Environment variables set in Vercel dashboard
+- Environment variables set in Vercel dashboard (never in `vercel.json`)
 
 ### Pre-deployment Checklist
-- [ ] All tests passing
+- [ ] All tests passing (`pnpm test`)
+- [ ] No TypeScript errors (`pnpm type-check`)
 - [ ] Build succeeds locally (`pnpm build`)
-- [ ] Environment variables configured
-- [ ] Database migrations applied
-- [ ] RLS policies verified
-- [ ] Africa's Talking webhook URL updated
-
-## Performance
-
-### Optimization
-- Use Next.js Image component for images
-- Implement proper loading states
-- Use React Suspense for async components
-- Minimize client-side JavaScript
-
-### Caching
-- Leverage Next.js caching strategies
-- Use React Query for data fetching
-- Cache static assets appropriately
-
-## Security
-
-### Best Practices
-- Never expose service role key to client
-- Validate all user inputs
-- Use Zod schemas for validation
-- Sanitize data before database operations
-- Follow OWASP guidelines
-- Protect PHI (Protected Health Information) per HIPAA guidelines
-
-### Sensitive Data
-- Store API keys in environment variables
-- Never commit `.env.local` to git
-- Use Supabase RLS for data access control
-- Implement proper error handling (don't expose internals)
-- Encrypt sensitive patient data
-- Log all access to participant data for audit trail
-
-### Healthcare-Specific Security
-- **PHI Protection**: All participant data is PHI (Protected Health Information)
-- **Audit Logging**: Log all access to `uci_activity_log` table
-- **Role-Based Access**: Enforce strict role checks for sensitive operations
-- **Data Retention**: Follow UCI's data retention policies
-- **Consent Management**: Verify participant consent before calls
-
-## Documentation
-
-### Code Comments
-- Comment complex logic
-- Document function parameters and return types
-- Explain "why" not "what"
-
-### README Updates
-- Keep README.md current
-- Document new features
-- Update setup instructions as needed
-
-## Healthcare Domain Rules
-
-### Participant Privacy
-- Never log full participant names or phone numbers in client-side code
-- Always use participant IDs in URLs and logs
-- Implement proper consent tracking before any calls
-
-### Call Scheduling
-- Respect timezone settings (Africa/Kampala UTC+3)
-- Never call outside configured hours (8 AM - 8 PM by default)
-- Implement retry logic with exponential backoff
-
-### Severity Alerts
-- **Critical (Score 4)**: Immediate email notification to medical staff
-- **High (Score 3)**: Flag for review within 24 hours
-- **Moderate (Score 2)**: Monitor in dashboard
-- **Low (Score 1)**: Track in reports
-
-### Question Flow Rules
-- Always play welcome message before questions
-- Support "Press 9 to repeat" functionality
-- Implement timeout handling (30 seconds default)
-- Track invalid input attempts (max 3 before ending call)
-
-### Audio File Management
-- All audio files stored in Vercel Blob
-- Support MP3 and WAV formats
-- Maximum file size: 5MB
-- Naming convention: `{type}_{flow_id}_{timestamp}.mp3`
+- [ ] No high/critical vulnerabilities (`pnpm audit`)
+- [ ] Environment variables configured in Vercel for the target environment
+- [ ] Database migrations applied to production Supabase project
+- [ ] RLS enabled and policies verified on all user-data tables
+- [ ] `.env.example` up to date
 
 ---
 
-**Last Updated**: 2025-12-11
-**Enforced By**: Development team and code reviews
+## Performance
+
+- Use Next.js `<Image>` component for all images — never raw `<img>`
+- Implement skeleton loading states for all async data sections
+- Use React Suspense with `loading.tsx` for route-level loading
+- Minimize `'use client'` boundaries — keep them as deep in the tree as possible
+- Leverage Next.js fetch caching and `revalidate` for server component data
+- Do not fetch data in client components on mount if it can be fetched in the parent server component
+
+---
+
+## Documentation
+
+- Keep `README.md` current with setup instructions
+- Keep `.env.example` current with all required variables
+- Reference `docs/PRD.md` for feature decisions
+- Reference `docs/design-system/README.md` for UI decisions
+- Comment complex logic only — explain WHY, not WHAT
+- Every new database table and RLS policy must be reflected in the migration files in `supabase/migrations/`
+
+---
+
+**Last Updated**: 2026-04-23

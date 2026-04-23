@@ -1,7 +1,7 @@
 # Product Requirements Document: RERU
 
-**Version:** 1.0  
-**Date:** 2026-04-22  
+**Version:** 1.1  
+**Date:** 2026-04-23  
 **Owner:** Brian Twesigye, Mukono Countryside Mixed Farm Ltd
 
 ---
@@ -9,7 +9,7 @@
 ## 1. Overview
 
 ### Problem Statement
-Nsasa Estate residents in Mukono District, Uganda lack a reliable, organized waste collection service with transparent billing, collection tracking, and proper waste sorting guidance. Improper waste disposal leads to environmental degradation and public health risks.
+Nsasa Estate residents in Mukono District, Uganda lack a reliable, organized waste collection service with transparent billing, collection tracking, and proper waste sorting guidance. Improper waste disposal leads to environmental degradation and public health risks in the community.
 
 ### Product Vision
 RERU is a household waste collection and recycling service management platform that connects residents of Nsasa Estate to a regular, eco-conscious garbage collection service. The platform manages the full waste lifecycle — from client registration and collection scheduling through to composting and certified recycling — while giving clients full visibility into their service status, payment history, and environmental impact.
@@ -18,8 +18,8 @@ RERU is a household waste collection and recycling service management platform t
 - **Product Name:** RERU (Reusable Resources)
 - **Operator:** Mukono Countryside Mixed Farm Ltd
 - **Service Area:** Nsasa Estate, Mukono District, Uganda
-- **Deployment:** Web application (mobile-responsive)
-- **Current State:** Frontend MVP (single-page React app with mock data, no backend)
+- **Deployment:** Web application (mobile-responsive), live at [reru.odukar.com](https://reru.odukar.com)
+- **Current State:** Production — Next.js 15 app with Supabase backend, deployed on Vercel
 
 ---
 
@@ -29,13 +29,14 @@ RERU is a household waste collection and recycling service management platform t
 Households in Nsasa Estate who subscribe to weekly waste collection.
 - Need to track their next collection date and history
 - Need to view and pay invoices
-- Need guidance on waste sorting
+- Need guidance on waste sorting (color-coded bags)
 
 ### Secondary: Service Operations Staff (Admin)
 Staff responsible for scheduling collections, managing client accounts, and tracking payments.
-- Need to view all client accounts and statuses
+- Need to view all client accounts and their statuses
 - Need to record completed/missed collections
-- Need to generate and send invoices
+- Need to generate, send, and manage invoices
+- Need zone-level visibility of daily collection workload
 
 ---
 
@@ -51,224 +52,252 @@ Staff responsible for scheduling collections, managing client accounts, and trac
 
 ---
 
-## 4. Current MVP Features
+## 4. Live Features (v1 — Production)
+
+All features below are built and deployed. The Supabase backend is live with real data — there is no mock data layer.
 
 ### 4.1 Landing / Marketing Page
-- Hero section with service description and CTA buttons (Register / Login)
+- Hero section with problem statement, service description, and CTA buttons (Register / Login)
 - Four service pillars: Waste Collection, Composting, Recycling, Safe Disposal
-- "How It Works" four-step onboarding flow: Register → Get Bags → Set Out Waste → We Collect
+- "How It Works" four-step onboarding: Register → Get Bags → Set Out Waste → We Collect
 - Pricing plans display (Monthly vs. Annual)
-- Contact information and social links
+- Contact information
 
 ### 4.2 Authentication
-- **Login:** Phone number + 4-digit PIN
+- **Login:** Phone number + 4-digit PIN via Supabase Auth
 - **Registration (3-step wizard):**
   - Step 1: Full name and phone number
   - Step 2: Home address, zone selection (Zone A / B / C), preferred collection day (Mon–Fri)
   - Step 3: Plan selection (Monthly / Annual) and service agreement acceptance
+- Protected routes enforced via Next.js middleware (unauthenticated users redirected to `/login`)
 
-### 4.3 Client Dashboard
+### 4.3 Client Dashboard (`/dashboard`)
 - Next collection date with countdown (days remaining)
 - Quick stats: Plan type, Account status, Paid-through date, Collection day
 - Recent collections list (last 4) with status badges (Completed / Scheduled / Missed)
 - Quick actions: View Invoices, View Service Agreement
 - Payment reminder banner (amount due, due date)
 
-### 4.4 Collections Page
+### 4.4 Collections Page (`/dashboard/collections`)
 - Summary cards: Total Completed / Scheduled / Missed counts
 - Full chronological collection log with date, status, and notes
 
-### 4.5 Invoices Page
+### 4.5 Invoices Page (`/dashboard/invoices`)
 - Invoice list: ID, date, plan, amount, payment status
-- Invoice detail view (PDF-style):
+- Invoice detail view (`/dashboard/invoices/[id]`):
   - Billed-to and service provider details
   - Itemized table (Description, Qty, Unit Price, Amount)
   - Subtotal, 6% tax, Total
   - Payment instructions (Mobile Money, Bank Transfer, Cash)
-  - Download PDF button (placeholder)
+  - Print / PDF download (jsPDF, client-side generation)
 
-### 4.6 Service Agreement Page
+### 4.6 Service Agreement Page (`/dashboard/agreement`)
 - Full legal contract terms (6 sections)
 - Active status badge
 - Signature blocks for both parties
 
 ### 4.7 App Shell
 - Sidebar navigation (Desktop): Home, Collections, Invoices, Agreement
-- Mobile-responsive hamburger menu (full-screen overlay)
+- Mobile-responsive sheet navigation (hamburger overlay)
 - Client user card: name, zone, initials avatar
 - Sign-out button
 
 ---
 
-## 5. Feature Requirements (Upcoming / v2)
+## 5. In Progress — Admin Dashboard (v1.5, Current Priority)
 
-### 5.1 Backend & Database
-- REST API or GraphQL server for all client, collection, and invoice data
-- Persistent database (PostgreSQL recommended)
-- Secure session management (JWT or server-side sessions)
-- Role-based access control (Client, Admin, Superadmin)
+The admin dashboard is the next feature to be built. It will be a protected section of the same Next.js app under `/dashboard/admin/*`, accessible only to users with `admin` or `superadmin` roles.
 
-### 5.2 Real Authentication
-- Phone number OTP verification at registration
-- Secure PIN hashing (bcrypt)
-- Password reset via SMS OTP
-- Session expiry and refresh token support
+### 5.1 Client Management
+- View all registered clients with search, filter by zone, filter by plan, filter by status
+- View individual client profile: contact info, plan, payment history, collection history
+- Edit client details (address, zone, collection day, plan)
+- Suspend / reactivate accounts (with reason recorded in audit log)
 
-### 5.3 Payment Integration
-- Mobile Money API integration (MTN MoMo, Airtel Money)
-- Automated payment confirmation and receipt generation
-- Invoice auto-generation at the start of each billing period
-- Overdue reminders (SMS + in-app)
-- Service suspension after 3 consecutive missed payments (automated flag)
+### 5.2 Collection Management
+- Daily view: all clients due for collection today, grouped by zone
+- Mark individual collections as Completed or Missed
+- Add notes to a collection record (e.g., "client unavailable", "gate locked")
+- Bulk-schedule collections for the next billing period
 
-### 5.4 Notifications
-- SMS alerts: collection reminders (day before), payment due reminders, collection confirmations
-- In-app notification bell with unread count
-- Email receipts for invoice payment
+### 5.3 Invoice Management
+- Generate invoices for individual clients or in bulk (all active clients)
+- Mark invoices as Paid (with payment method and reference recorded)
+- View overdue invoices and send payment reminders
+- Download / print individual invoices
 
-### 5.5 PDF Invoice Generation
-- Server-side PDF generation for invoices
-- Download and email delivery
+### 5.4 Payment & Overdue Tracking
+- Dashboard view of payment compliance (% paid on time, overdue counts)
+- Flag accounts with 3+ consecutive missed payments for suspension
+- Export payment report as CSV
 
-### 5.6 Admin Dashboard
-- Client management (view, edit, suspend, activate accounts)
-- Collection scheduling and recording (bulk and per-client)
-- Invoice management (generate, mark paid, send)
-- Payment tracking and overdue reports
-- Zone-level operational view (which clients are due for collection today)
-
-### 5.7 Waste Tracking
-- Record bag counts per collection (organic, plastic, glass, paper)
-- Chain-of-custody log from pickup → sorting → facility
-- Client-facing environmental impact summary (e.g., kg recycled, CO₂ offset)
-
-### 5.8 GPS / Route Optimization (Future)
-- Collection route planning for field staff
-- Live ETA notifications to clients on collection day
+### 5.5 Zone-Level Operational View
+- Map or list of which clients are in each zone
+- Today's collection schedule grouped by zone
+- Collector assignment per zone (v2)
 
 ---
 
-## 6. Data Models
+## 6. Upcoming Features (v2)
+
+### 6.1 Real-Time SMS Notifications
+- Collection reminders sent the day before via Africa's Talking API
+- Payment due reminders (sent on the 8th of each month)
+- Collection confirmation SMS after each completed pickup
+
+### 6.2 Mobile Money Payment Integration
+- MTN MoMo API and Airtel Money API integration
+- Automated payment confirmation and receipt generation
+- Invoice auto-generation at the start of each billing period
+- Service suspension trigger after 3 consecutive missed payments (automated)
+
+### 6.3 Waste Tracking & Environmental Impact
+- Record bag counts per collection (Organic, Plastic, Glass, Paper)
+- Chain-of-custody log from pickup → sorting → disposal/recycling facility
+- Client-facing environmental summary (e.g., kg diverted from landfill, CO₂ offset estimate)
+
+### 6.4 In-App Notifications
+- Notification bell with unread count
+- Notification history (collection reminders, payment reminders, status changes)
+
+### 6.5 GPS / Route Optimization
+- Collection route planning for field staff
+- Live ETA push notifications to clients on collection day
+
+---
+
+## 7. Data Models
+
+All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 
 ### Client
 | Field | Type | Notes |
 |---|---|---|
-| id | integer | Primary key |
+| id | uuid | Primary key |
+| user_id | uuid | FK to Supabase `auth.users` |
 | name | string | Full name |
 | phone | string | Used as login identifier |
-| pin_hash | string | Hashed 4-digit PIN |
 | address | string | Home address |
-| zone | enum | Zone A, Zone B, Zone C |
-| collection_day | enum | Monday–Friday |
-| plan | enum | monthly, annual |
-| status | enum | active, suspended, cancelled |
-| paid_through | date | Last paid billing period end |
+| zone | enum | `Zone A`, `Zone B`, `Zone C` |
+| collection_day | enum | `Monday`–`Friday` |
+| plan | enum | `monthly`, `annual` |
+| status | enum | `active`, `suspended`, `cancelled` |
+| paid_through | date | Last paid billing period end date (nullable) |
 | created_at | timestamp | |
+
+> Note: PIN is managed by Supabase Auth — not stored in the `clients` table.
 
 ### Invoice
 | Field | Type | Notes |
 |---|---|---|
-| id | string | e.g., INV-01234 |
-| client_id | integer | FK to Client |
+| id | uuid | Primary key |
+| client_id | uuid | FK to `clients` |
 | date | date | Invoice issue date |
-| plan | enum | monthly, annual |
+| plan | string | Plan at time of invoice |
 | qty | integer | Months covered |
 | unit_price | integer | UGX |
 | subtotal | integer | UGX |
-| tax | integer | 6% of subtotal |
+| tax | integer | 6% of subtotal, UGX |
 | total | integer | UGX |
-| status | enum | pending, paid, overdue |
+| status | enum | `pending`, `paid`, `overdue` |
 | paid_at | timestamp | Nullable |
+| created_at | timestamp | |
 
 ### Collection
 | Field | Type | Notes |
 |---|---|---|
-| id | integer | Primary key |
-| client_id | integer | FK to Client |
+| id | uuid | Primary key |
+| client_id | uuid | FK to `clients` |
 | scheduled_date | date | |
-| status | enum | scheduled, completed, missed |
-| bags_collected | integer | Nullable (on completion) |
+| status | enum | `scheduled`, `completed`, `missed` |
+| bags_collected | integer | Nullable — filled on completion |
 | notes | string | Nullable |
-| recorded_by | integer | FK to Admin user |
+| recorded_by | uuid | FK to admin user (nullable) |
 | completed_at | timestamp | Nullable |
+| created_at | timestamp | |
 
 ---
 
-## 7. Tech Stack
+## 8. Tech Stack
 
-### Current (MVP)
+### Current (Production)
+
 | Layer | Technology |
 |---|---|
-| UI | React 18 (UMD, browser-loaded) |
-| Styling | Custom CSS (OKLCH color space) |
-| JSX Compilation | Babel Standalone (in-browser) |
-| Data | Hardcoded mock data in JS |
-| Hosting | Static file server |
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript 5 |
+| UI Library | React 19 |
+| Styling | Tailwind CSS 3 |
+| UI Components | Radix UI primitives (via Shadcn/UI pattern) |
+| Icons | Lucide React |
+| Forms | React Hook Form + Zod |
+| Toasts | Sonner |
+| PDF Generation | jsPDF + jsPDF-autotable (client-side) |
+| Date Utilities | date-fns |
+| Backend / Database | Supabase (PostgreSQL, Auth, Storage) |
+| Supabase Client | `@supabase/ssr` + `@supabase/supabase-js` |
+| Package Manager | pnpm |
+| Hosting | Vercel |
 
-### Recommended (Production)
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite (bundled, code-split) |
-| Styling | Tailwind CSS or existing design system extracted to CSS modules |
-| Backend | Node.js (Express) or Python (FastAPI) |
-| Database | PostgreSQL |
-| Auth | JWT + bcrypt |
-| SMS | Africa's Talking API (Uganda coverage) |
-| Payments | MTN MoMo API / Airtel Money API |
-| PDF | Puppeteer or WeasyPrint (server-side) |
-| Hosting | VPS or managed cloud (e.g., DigitalOcean, Render) |
+### Key Architectural Decisions
+
+- **App Router (Next.js 15)**: All pages use the App Router with server and client components.
+- **API-first mutations**: All data mutations go through Next.js API routes (`app/api/**`), never direct Supabase calls from client components.
+- **Supabase SSR**: Auth session is managed server-side using `@supabase/ssr`, with middleware refreshing the session on every request.
+- **RLS everywhere**: Row Level Security is enabled on all user-data tables; application code never bypasses it.
 
 ---
 
-## 8. Business Model
+## 9. Business Model
 
 | Plan | Price | Notes |
 |---|---|---|
 | Monthly | UGX 25,000 / month | Flexible, cancel anytime |
 | Annual | UGX 240,000 / year | Saves UGX 60,000 vs. monthly |
 
-**Payment Methods:**
-- Mobile Money: 0778527802 (MTN), 0704132691 (Airtel)
+**Payment Methods (current — manual):**
+- Mobile Money: 0778527802 (MTN MoMo), 0704132691 (Airtel Money)
 - Bank Transfer: Bank of Africa, A/C 06566780001
 - Cash (in person)
 
 **Billing Terms:**
 - Payment due by the 10th of each month
 - Service suspended after 3 consecutive missed payments
-- 3 months notice required for termination
+- 3 months written notice required for termination
 - Contract duration: 5 years, renewable by mutual consent
 
 ---
 
-## 9. Geographic & Operational Scope
+## 10. Geographic & Operational Scope
 
 - **Service Area:** Nsasa Estate, Mukono District, Uganda
 - **Zones:** Zone A, Zone B, Zone C (within the estate)
-- **Collection Frequency:** Weekly (client selects preferred weekday)
+- **Collection Frequency:** Weekly (client selects preferred weekday at registration)
 - **Waste Categories:** Organic (Black Soldier Fly / earthworm composting), Plastic, Glass, Paper
 - **Disposal Facilities:** Katikolo (Mukono), Buyala (Kampala)
 - **Recycling:** Certified third-party recycling facilities
 
 ---
 
-## 10. Non-Functional Requirements
+## 11. Non-Functional Requirements
 
 | Requirement | Detail |
 |---|---|
-| Mobile Responsiveness | Full functionality on screens 320px and wider |
+| Mobile Responsiveness | Full functionality on screens 320px and wider; mobile breakpoint at 700px |
 | Browser Support | Modern browsers (Chrome, Firefox, Safari, Edge — last 2 major versions) |
 | Performance | Initial page load < 3s on 3G connection |
 | Accessibility | WCAG 2.1 AA — sufficient color contrast, keyboard navigability, semantic HTML |
-| Availability | 99.5% uptime target |
-| Data Privacy | Client PII stored securely; no third-party data sharing without consent |
-| Localization | UGX currency, dd-MMM-YYYY date format, English (Uganda) |
+| Availability | 99.5% uptime (Vercel + Supabase SLAs) |
+| Data Privacy | Client PII stored in Supabase (AWS us-east-1); no third-party data sharing without consent |
+| Localization | UGX currency (`UGX X,XXX` format), `22 Apr 2026` date format, English (Uganda) |
+| Security | RLS on all tables, bcrypt PIN hashing, HTTP security headers, rate limiting on auth endpoints |
 
 ---
 
-## 11. Out of Scope (v1)
+## 12. Out of Scope (v1)
 
 - Multi-estate or multi-city expansion
-- Commercial/business client management
+- Commercial / business client management (households only)
 - Waste bin / IoT sensor integration
 - Native mobile app (iOS / Android)
 - Multi-language support
@@ -277,10 +306,9 @@ Staff responsible for scheduling collections, managing client accounts, and trac
 
 ---
 
-## 12. Open Questions
+## 13. Open Questions
 
-1. What backend hosting environment is available / preferred?
-2. Which Mobile Money API provider should be prioritized (MTN MoMo, Airtel, or both)?
-3. Should the admin dashboard be a separate app or a protected route within the existing client app?
-4. Is there an existing staff headcount for field operations that the scheduling feature needs to account for?
-5. What is the target go-live date for the backend-integrated version?
+1. Which Mobile Money API should be integrated first — MTN MoMo, Airtel Money, or both simultaneously?
+2. Should the admin dashboard support multiple field collectors with individual assignments, or is a single admin view sufficient for now?
+3. Is there a target client count to onboard before the admin dashboard needs to be live?
+4. Should invoice PDF generation remain client-side (jsPDF) or move to server-side for better fidelity?
