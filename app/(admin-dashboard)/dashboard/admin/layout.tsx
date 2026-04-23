@@ -5,7 +5,7 @@ import { AdminMobileNav } from '@/components/admin/layout/admin-mobile-nav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const adminUser = await getAdminUser()
-  if (!adminUser) redirect('/dashboard')
+  if (!adminUser) redirect('/auth/login')
 
   return (
     <div className="flex min-h-screen bg-reru-bg">

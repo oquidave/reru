@@ -19,15 +19,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
-  // Inject the current pathname as a request header so server-component layouts
-  // can read it via headers(). This is needed because layouts have no other way
-  // to know their current path (no usePathname on the server).
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-pathname', request.nextUrl.pathname)
-
-  let response = NextResponse.next({
-    request: { headers: requestHeaders },
-  })
+  let response = NextResponse.next()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,13 +31,12 @@ export async function middleware(request: NextRequest) {
         },
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
-          // Preserve the x-pathname header when Next.js recreates the response
-          response = NextResponse.next({ request: { headers: requestHeaders } })
+          response = NextResponse.next()
           response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({ request: { headers: requestHeaders } })
+          response = NextResponse.next()
           response.cookies.set({ name, value: '', ...options })
         },
       },
@@ -76,6 +67,26 @@ export async function middleware(request: NextRequest) {
 
       if (!profile || !['admin', 'superadmin'].includes(profile.role as string)) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    } else {
+      // Redirect admin-only users away from the user dashboard before any layout runs
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
+        const { data: client } = await supabase
+          .from('reru_clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!client) {
+          console.log('[MW] admin-only user on user dashboard → /dashboard/admin')
+          return NextResponse.redirect(new URL('/dashboard/admin', request.url))
+        }
       }
     }
   }
