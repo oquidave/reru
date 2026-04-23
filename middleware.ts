@@ -56,8 +56,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log('[MW]', request.nextUrl.pathname, '| user:', user?.email ?? 'none')
+
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
+      console.log('[MW] no user → /auth/login')
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
 
@@ -68,6 +71,8 @@ export async function middleware(request: NextRequest) {
         .select('role')
         .eq('user_id', user.id)
         .single()
+
+      console.log('[MW] admin route, profile role:', profile?.role ?? 'null')
 
       if (!profile || !['admin', 'superadmin'].includes(profile.role as string)) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -84,6 +89,8 @@ export async function middleware(request: NextRequest) {
         .eq('user_id', user.id)
         .single()
 
+      console.log('[MW] auth route logged-in user, profile role:', profile?.role ?? 'null')
+
       if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
         // Confirm they have no client record before redirecting to admin
         const { data: client } = await supabase
@@ -92,11 +99,15 @@ export async function middleware(request: NextRequest) {
           .eq('user_id', user.id)
           .maybeSingle()
 
+        console.log('[MW] admin user, client record:', client ? 'exists' : 'none')
+
         if (!client) {
+          console.log('[MW] admin-only user → /dashboard/admin')
           return NextResponse.redirect(new URL('/dashboard/admin', request.url))
         }
       }
 
+      console.log('[MW] logged-in user on /auth → /dashboard')
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }

@@ -9,37 +9,52 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
 
+  console.log('[LAYOUT] x-pathname header:', JSON.stringify(pathname))
+
   const supabase = await createSupabaseServerClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  console.log('[LAYOUT] user:', user?.email ?? 'none')
+
+  if (!user) {
+    console.log('[LAYOUT] no user → /auth/login')
+    redirect('/auth/login')
+  }
 
   // Admin routes have their own layout — pass through without the client shell.
   // The admin layout (app/dashboard/admin/layout.tsx) handles auth and rendering.
   if (pathname.startsWith('/dashboard/admin')) {
+    console.log('[LAYOUT] admin path — passing through')
     return <>{children}</>
   }
 
-  const { data: client } = await supabase
+  const { data: client, error: clientError } = await supabase
     .from('reru_clients')
     .select('*')
     .eq('user_id', user.id)
     .single()
 
+  console.log('[LAYOUT] client:', client ? 'found' : 'null', '| error:', clientError?.message ?? 'none')
+
   if (!client) {
     // Admin-only users have no client record — send them to the admin dashboard
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('user_id', user.id)
       .single()
 
+    console.log('[LAYOUT] profile:', profile?.role ?? 'null', '| error:', profileError?.message ?? 'none')
+
     if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
+      console.log('[LAYOUT] admin-only user → /dashboard/admin')
       redirect('/dashboard/admin')
     }
 
+    console.log('[LAYOUT] no client, no admin role → /auth/login')
     redirect('/auth/login')
   }
 
