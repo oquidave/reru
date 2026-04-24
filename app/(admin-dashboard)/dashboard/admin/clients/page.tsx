@@ -4,6 +4,7 @@ import { getAdminUser } from '@/lib/auth/get-admin-user'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminClientFilters } from '@/components/admin/clients/admin-client-filters'
 import { AdminClientsTable } from '@/components/admin/clients/admin-clients-table'
+import { AdminAddClientDialog } from '@/components/admin/clients/admin-add-client-dialog'
 import type { Client, Zone, Plan, ClientStatus } from '@/types'
 
 export const metadata = { title: 'Clients — RERU Admin' }
@@ -53,6 +54,7 @@ export default async function AdminClientsPage({ searchParams }: PageProps) {
           <h1 className="reru-h1 text-reru-text-primary">Clients</h1>
           <p className="reru-body text-reru-text-secondary mt-1">{typedClients.length} client{typedClients.length !== 1 ? 's' : ''}</p>
         </div>
+        <AdminAddClientDialog />
       </div>
 
       <Suspense>
