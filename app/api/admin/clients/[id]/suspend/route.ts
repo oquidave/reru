@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const suspendSchema = z.object({
   action: z.enum(['suspend', 'reactivate']),
@@ -12,13 +11,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
   const body = await req.json() as unknown
   const parsed = suspendSchema.safeParse(body)
@@ -32,7 +30,7 @@ export async function POST(
   const { action, reason } = parsed.data
   const newStatus = action === 'suspend' ? 'suspended' : 'active'
 
-  const { data: oldClient } = await supabase
+  const { data: oldClient } = await adminUser.supabase
     .from('reru_clients')
     .select('id, status')
     .eq('id', id)
@@ -42,7 +40,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Client not found' }, { status: 404 })
   }
 
-  const { data: updatedClient, error } = await supabase
+  const { data: updatedClient, error } = await adminUser.supabase
     .from('reru_clients')
     .update({ status: newStatus })
     .eq('id', id)
@@ -54,7 +52,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Failed to update account status' }, { status: 500 })
   }
 
-  await supabase.from('audit_logs').insert({
+  await adminUser.supabase.from('audit_logs').insert({
     admin_id:  adminUser.user.id,
     action:    action === 'suspend' ? 'suspend_client' : 'reactivate_client',
     entity:    'client',

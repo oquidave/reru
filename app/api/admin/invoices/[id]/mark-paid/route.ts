@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const markPaidSchema = z.object({
   payment_method: z.enum(['mtn_momo', 'airtel', 'bank_transfer', 'cash']),
@@ -13,13 +12,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
   const body = await req.json() as unknown
   const parsed = markPaidSchema.safeParse(body)
@@ -30,7 +28,7 @@ export async function POST(
     )
   }
 
-  const { data: invoice } = await supabase
+  const { data: invoice } = await adminUser.supabase
     .from('reru_invoices')
     .select('*, reru_clients(id, paid_through)')
     .eq('id', id)
@@ -46,7 +44,7 @@ export async function POST(
 
   const paidAt = parsed.data.paid_at ?? new Date().toISOString()
 
-  const { data: updatedInvoice, error } = await supabase
+  const { data: updatedInvoice, error } = await adminUser.supabase
     .from('reru_invoices')
     .update({
       status:         'paid',
@@ -63,19 +61,18 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Failed to mark invoice as paid' }, { status: 500 })
   }
 
-  // Update client paid_through if this invoice date is more recent
   const clientData = invoice.reru_clients as { id: string; paid_through: string | null } | null
   if (clientData) {
     const invoiceDate = invoice.date as string
     if (!clientData.paid_through || invoiceDate > clientData.paid_through) {
-      await supabase
+      await adminUser.supabase
         .from('reru_clients')
         .update({ paid_through: invoiceDate })
         .eq('id', clientData.id)
     }
   }
 
-  await supabase.from('audit_logs').insert({
+  await adminUser.supabase.from('audit_logs').insert({
     admin_id:  adminUser.user.id,
     action:    'mark_invoice_paid',
     entity:    'invoice',

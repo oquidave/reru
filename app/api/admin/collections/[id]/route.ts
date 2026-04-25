@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { AuditAction } from '@/types'
 
 const updateCollectionSchema = z.object({
@@ -14,13 +13,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
   const body = await req.json() as unknown
   const parsed = updateCollectionSchema.safeParse(body)
@@ -32,7 +30,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: 'No fields to update' }, { status: 400 })
   }
 
-  const { data: oldCollection } = await supabase
+  const { data: oldCollection } = await adminUser.supabase
     .from('reru_collections')
     .select('*')
     .eq('id', id)
@@ -48,7 +46,7 @@ export async function PATCH(
     updatePayload.recorded_by  = adminUser.user.id
   }
 
-  const { data: updatedCollection, error } = await supabase
+  const { data: updatedCollection, error } = await adminUser.supabase
     .from('reru_collections')
     .update(updatePayload)
     .eq('id', id)
@@ -64,7 +62,7 @@ export async function PATCH(
   if (parsed.data.status === 'missed') auditAction = 'mark_collection_missed'
 
   if (parsed.data.status) {
-    await supabase.from('audit_logs').insert({
+    await adminUser.supabase.from('audit_logs').insert({
       admin_id:  adminUser.user.id,
       action:    auditAction,
       entity:    'collection',

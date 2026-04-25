@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 
 const exportQuerySchema = z.object({
@@ -18,7 +17,7 @@ function escapeCSV(value: string | number | null | undefined): string {
 }
 
 export async function GET(req: Request) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
@@ -29,8 +28,6 @@ export async function GET(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: 'Invalid status filter' }, { status: 400 })
   }
-
-  const supabase = await createSupabaseServerClient()
 
   type InvoiceRow = {
     id: string
@@ -48,7 +45,7 @@ export async function GET(req: Request) {
     reru_clients: { name: string; zone: string; phone: string } | null
   }
 
-  let query = supabase
+  let query = adminUser.supabase
     .from('reru_invoices')
     .select('id, date, plan, qty, unit_price, subtotal, tax, total, status, paid_at, payment_method, payment_ref, reru_clients(name, zone, phone)')
     .order('date', { ascending: false })

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Client } from '@/types'
 
 const updateClientSchema = z.object({
@@ -12,18 +11,17 @@ const updateClientSchema = z.object({
 })
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
-  const { data: client, error } = await supabase
+  const { data: client, error } = await adminUser.supabase
     .from('reru_clients')
     .select('*')
     .eq('id', id)
@@ -40,13 +38,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
   const body = await req.json() as unknown
   const parsed = updateClientSchema.safeParse(body)
@@ -58,8 +55,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: 'No fields to update' }, { status: 400 })
   }
 
-  // Snapshot old value for audit log
-  const { data: oldClient } = await supabase
+  const { data: oldClient } = await adminUser.supabase
     .from('reru_clients')
     .select('*')
     .eq('id', id)
@@ -69,7 +65,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: 'Client not found' }, { status: 404 })
   }
 
-  const { data: updatedClient, error } = await supabase
+  const { data: updatedClient, error } = await adminUser.supabase
     .from('reru_clients')
     .update(parsed.data)
     .eq('id', id)
@@ -81,7 +77,7 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: 'Failed to update client' }, { status: 500 })
   }
 
-  await supabase.from('audit_logs').insert({
+  await adminUser.supabase.from('audit_logs').insert({
     admin_id:  adminUser.user.id,
     action:    'edit_client',
     entity:    'client',

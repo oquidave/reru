@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { addWeeks, nextMonday, nextTuesday, nextWednesday, nextThursday, nextFriday, format, isAfter, startOfDay } from 'date-fns'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { CollectionDay } from '@/types'
 
 const bulkScheduleSchema = z.object({
@@ -21,12 +20,10 @@ function getNextOccurrence(day: CollectionDay, from: Date): Date {
 }
 
 export async function POST(req: Request) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
-
-  const supabase = await createSupabaseServerClient()
 
   const body = await req.json() as unknown
   const parsed = bulkScheduleSchema.safeParse(body)
@@ -36,7 +33,7 @@ export async function POST(req: Request) {
 
   const { weeks_ahead } = parsed.data
 
-  const { data: clients, error: clientsError } = await supabase
+  const { data: clients, error: clientsError } = await adminUser.supabase
     .from('reru_clients')
     .select('id, collection_day')
     .eq('status', 'active')
@@ -69,7 +66,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, data: { scheduled: 0 } })
   }
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await adminUser.supabase
     .from('reru_collections')
     .upsert(rows, { onConflict: 'client_id,scheduled_date', ignoreDuplicates: true })
 
@@ -78,7 +75,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Failed to schedule collections' }, { status: 500 })
   }
 
-  await supabase.from('audit_logs').insert({
+  await adminUser.supabase.from('audit_logs').insert({
     admin_id:  adminUser.user.id,
     action:    'bulk_schedule_collections',
     entity:    'collection',

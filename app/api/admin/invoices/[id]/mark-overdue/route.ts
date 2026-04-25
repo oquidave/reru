@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(req)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
-  const { data: invoice } = await supabase
+  const { data: invoice } = await adminUser.supabase
     .from('reru_invoices')
     .select('id, status')
     .eq('id', id)
@@ -31,7 +29,7 @@ export async function POST(
     )
   }
 
-  const { data: updatedInvoice, error } = await supabase
+  const { data: updatedInvoice, error } = await adminUser.supabase
     .from('reru_invoices')
     .update({ status: 'overdue' })
     .eq('id', id)
@@ -43,7 +41,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: 'Failed to mark invoice as overdue' }, { status: 500 })
   }
 
-  await supabase.from('audit_logs').insert({
+  await adminUser.supabase.from('audit_logs').insert({
     admin_id:  adminUser.user.id,
     action:    'mark_invoice_overdue',
     entity:    'invoice',

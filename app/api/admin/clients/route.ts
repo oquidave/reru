@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
-import { createSupabaseServerClient, createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
+import { createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
 import { randomUUID } from 'crypto'
 
 const addClientSchema = z.object({
@@ -15,7 +15,7 @@ const addClientSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const adminUser = await getAdminUser()
+  const adminUser = await getAdminUser(request)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
@@ -75,15 +75,13 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  const adminUser = await getAdminUser()
+export async function GET(request: Request) {
+  const adminUser = await getAdminUser(request)
   if (!adminUser) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createSupabaseServerClient()
-
-  const { data: clients, error } = await supabase
+  const { data: clients, error } = await adminUser.supabase
     .from('reru_clients')
     .select('id, name, zone')
     .eq('status', 'active')
