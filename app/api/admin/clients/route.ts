@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       email,
       password: randomUUID(),
       email_confirm: true,
+      user_metadata: { full_name: name },
     })
 
     if (authError) {
@@ -55,16 +56,6 @@ export async function POST(request: Request) {
     if (clientError) {
       await supabase.auth.admin.deleteUser(userId)
       return NextResponse.json({ ok: false, error: 'Failed to create client profile' }, { status: 500 })
-    }
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ user_id: userId, role: 'client', full_name: name })
-
-    if (profileError) {
-      await supabase.from('reru_clients').delete().eq('user_id', userId)
-      await supabase.auth.admin.deleteUser(userId)
-      return NextResponse.json({ ok: false, error: 'Failed to create user profile' }, { status: 500 })
     }
 
     // Send password-setup (recovery) link so the client can set their own password
