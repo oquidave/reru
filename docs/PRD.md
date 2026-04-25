@@ -64,12 +64,13 @@ All features below are built and deployed. The Supabase backend is live with rea
 - Contact information
 
 ### 4.2 Authentication
-- **Login:** Phone number + 4-digit PIN via Supabase Auth
+- **Login:** Email address + password via Supabase Auth
 - **Registration (3-step wizard):**
-  - Step 1: Full name and phone number
+  - Step 1: Full name, email address, and phone number
   - Step 2: Home address, zone selection (Zone A / B / C), preferred collection day (Mon–Fri)
-  - Step 3: Plan selection (Monthly / Annual) and service agreement acceptance
+  - Step 3: Plan selection (Monthly / Annual), password creation, and service agreement acceptance
 - Protected routes enforced via Next.js middleware (unauthenticated users redirected to `/login`)
+- **Mobile / USSD clients:** authenticate via `POST /api/auth/login` with `{ email, password }` — receive `access_token` and `refresh_token` in response; send `Authorization: Bearer <access_token>` on all subsequent API requests; refresh via `POST /api/auth/refresh` when the token expires (default 1 hour)
 
 ### 4.3 Client Dashboard (`/dashboard`)
 - Next collection date with countdown (days remaining)
@@ -198,7 +199,7 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 | paid_through | date | Last paid billing period end date (nullable) |
 | created_at | timestamp | |
 
-> Note: PIN is managed by Supabase Auth — not stored in the `clients` table.
+> Note: Password is managed by Supabase Auth — not stored in the `clients` table.
 
 ### Invoice
 | Field | Type | Notes |
@@ -312,7 +313,7 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 | Availability | 99.5% uptime (Vercel + Supabase SLAs) |
 | Data Privacy | Client PII stored in Supabase (AWS us-east-1); no third-party data sharing without consent |
 | Localization | UGX currency (`UGX X,XXX` format), `22 Apr 2026` date format, English (Uganda) |
-| Security | RLS on all tables, bcrypt PIN hashing, HTTP security headers, rate limiting on auth endpoints |
+| Security | RLS on all tables, password hashing via Supabase Auth (bcrypt), HTTP security headers, rate limiting on auth endpoints |
 
 ---
 

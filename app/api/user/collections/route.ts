@@ -14,7 +14,7 @@ const querySchema = z.object({
 type CollectionsData = { data: Collection[]; total: number }
 
 export async function GET(request: Request): Promise<NextResponse<ApiResponse<CollectionsData>>> {
-  const current = await getCurrentClient()
+  const current = await getCurrentClient(request)
   if (!current) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }

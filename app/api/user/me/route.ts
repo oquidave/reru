@@ -6,8 +6,8 @@ import type { Client, Profile } from '@/types'
 
 type MeData = { client: Client; profile: Pick<Profile, 'role' | 'full_name'> }
 
-export async function GET(): Promise<NextResponse<ApiResponse<MeData>>> {
-  const current = await getCurrentClient()
+export async function GET(request: Request): Promise<NextResponse<ApiResponse<MeData>>> {
+  const current = await getCurrentClient(request)
   if (!current) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }

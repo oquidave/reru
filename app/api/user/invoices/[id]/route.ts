@@ -8,7 +8,7 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ApiResponse<Invoice>>> {
-  const current = await getCurrentClient()
+  const current = await getCurrentClient(_request)
   if (!current) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }

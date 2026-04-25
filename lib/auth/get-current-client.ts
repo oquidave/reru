@@ -4,10 +4,23 @@ import type { Client } from '@/types'
 
 type ClientUser = { user: User; client: Client }
 
-export async function getCurrentClient(): Promise<ClientUser | null> {
+export async function getCurrentClient(request?: Request): Promise<ClientUser | null> {
   const supabase = await createSupabaseServerClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  let user: User | null = null
+
+  // Bearer token path — for mobile/USSD clients
+  const authHeader = request?.headers.get('Authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    const { data } = await supabase.auth.getUser(token)
+    user = data.user
+  } else {
+    // Cookie path — for web clients
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  }
+
   if (!user) return null
 
   const { data: client } = await supabase

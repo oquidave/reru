@@ -10,7 +10,7 @@ const querySchema = z.object({
 })
 
 export async function GET(request: Request): Promise<NextResponse<ApiResponse<Invoice[]>>> {
-  const current = await getCurrentClient()
+  const current = await getCurrentClient(request)
   if (!current) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }

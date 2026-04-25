@@ -12,8 +12,8 @@ type DashboardData = {
   overdue_invoice_count: number
 }
 
-export async function GET(): Promise<NextResponse<ApiResponse<DashboardData>>> {
-  const current = await getCurrentClient()
+export async function GET(request: Request): Promise<NextResponse<ApiResponse<DashboardData>>> {
+  const current = await getCurrentClient(request)
   if (!current) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
