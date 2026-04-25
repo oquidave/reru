@@ -128,6 +128,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Run on all routes except static assets and API routes.
+    // API routes handle their own auth — skipping middleware avoids a
+    // redundant supabase.auth.getUser() round-trip on every API request.
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
