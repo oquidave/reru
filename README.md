@@ -2,6 +2,23 @@
 
 A household waste collection and recycling service management platform for Nsasa Estate, Mukono District, Uganda. Live at [reru.odukar.com](https://reru.odukar.com).
 
+## Platform Ecosystem
+
+RERU is a multi-client system. The REST API (in this repo) is the shared backend for all clients:
+
+| Repo | Platform | Stack | Status |
+|------|----------|-------|--------|
+| **[reru](https://github.com/oquidave/reru)** | Web + API | Next.js 15, TypeScript, Supabase | Live |
+| **[reru-android](https://github.com/oquidave/reru-android)** | Android | Flutter / Dart | In progress |
+| **[reru-ios](https://github.com/oquidave/reru-ios)** | iOS | Swift / SwiftUI | Planned |
+| **[reru-ussd](https://github.com/oquidave/reru-ussd)** | USSD | Python FastAPI + Africa's Talking | Planned |
+
+### Shared references (live in this repo, consumed by all clients)
+- **API contract:** [`docs/api.md`](docs/api.md)
+- **Design system:** [`docs/design-system/`](docs/design-system/)
+
+---
+
 ## What It Does
 
 RERU lets residents subscribe to a weekly garbage collection service and track everything in one place:
@@ -13,7 +30,9 @@ RERU lets residents subscribe to a weekly garbage collection service and track e
 
 Waste is sorted into color-coded bags (organic, plastic, glass, paper) and routed to composting, certified recycling facilities, or authorized disposal sites.
 
-## Tech Stack
+---
+
+## Web App Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -23,13 +42,13 @@ Waste is sorted into color-coded bags (organic, plastic, glass, paper) and route
 | Components | Radix UI primitives (Shadcn/UI pattern) |
 | Icons | Lucide React |
 | Forms | React Hook Form + Zod |
-| Toasts | Sonner |
-| PDF | jsPDF + jsPDF-autotable |
 | Backend | Supabase (PostgreSQL, Auth, Storage) |
 | Hosting | Vercel |
 | Package Manager | pnpm |
 
-## Getting Started
+---
+
+## Getting Started (Web)
 
 ### Prerequisites
 - Node.js 18+
@@ -39,26 +58,17 @@ Waste is sorted into color-coded bags (organic, plastic, glass, paper) and route
 ### Setup
 
 ```bash
-# Clone the repo
-git clone <repo-url>
+git clone https://github.com/oquidave/reru
 cd reru
-
-# Install dependencies
 pnpm install
-
-# Set up environment variables
 cp .env.example .env.local
-# Fill in the values from the Supabase project settings and Vercel dashboard
-
-# Start the development server
+# Fill in values from the Supabase project settings
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Environment Variables
-
-Copy `.env.example` to `.env.local` and populate:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=         # Supabase project URL
@@ -67,137 +77,85 @@ SUPABASE_SERVICE_ROLE_KEY=        # Service role key (server-only)
 SUPABASE_JWT_SECRET=              # JWT secret
 POSTGRES_URL=                     # Pooled Postgres connection
 POSTGRES_URL_NON_POOLING=         # Direct Postgres (for migrations)
-AFRICAS_TALKING_USERNAME=         # Africa's Talking (SMS)
-AFRICAS_TALKING_API_KEY=          # Africa's Talking (SMS)
+AFRICAS_TALKING_USERNAME=         # Africa's Talking (SMS, v2)
+AFRICAS_TALKING_API_KEY=          # Africa's Talking (SMS, v2)
 NEXT_PUBLIC_BASE_URL=             # App base URL
 ```
 
-## Project Structure
+---
+
+## Project Structure (Web)
 
 ```
 reru/
-├── app/                          # Next.js App Router
-│   ├── (landing)/home/           # Public landing page
-│   ├── auth/                     # Login & registration pages
-│   │   ├── login/
-│   │   └── register/
+├── app/
+│   ├── (landing)/home/               # Public landing page
+│   ├── auth/login/ & register/       # Auth pages
 │   ├── (user-dashboard)/dashboard/   # Authenticated client area
-│   │   ├── page.tsx              # Dashboard home
-│   │   ├── collections/          # Collection history
-│   │   ├── invoices/             # Invoice list + detail
-│   │   ├── agreement/            # Service agreement
-│   │   └── layout.tsx            # Client dashboard shell (sidebar + nav)
-│   ├── (admin-dashboard)/dashboard/admin/  # Admin area (independent layout chain)
-│   │   ├── page.tsx              # Admin overview
-│   │   ├── clients/              # Client management
-│   │   ├── collections/          # Collections management
-│   │   ├── invoices/             # Invoice management
-│   │   ├── schedule/             # Today's schedule
-│   │   └── layout.tsx            # Admin shell (sidebar + nav)
-│   ├── api/                      # API routes (server-side — shared by all clients)
-│   │   ├── auth/
-│   │   │   ├── login/            # POST — returns session tokens
-│   │   │   ├── refresh/          # POST — exchange refresh_token for new token pair
-│   │   │   ├── logout/           # POST
-│   │   │   └── register/         # POST — new client self-registration
-│   │   ├── user/                 # Authenticated client endpoints (web, mobile, USSD)
-│   │   │   ├── me/               # GET — profile + client record
-│   │   │   ├── dashboard/        # GET — aggregated dashboard data
-│   │   │   ├── collections/      # GET — history + /upcoming
-│   │   │   └── invoices/         # GET — list + /[id]
-│   │   └── admin/                # Admin-only endpoints
-│   │       ├── clients/
-│   │       ├── collections/
-│   │       └── invoices/
-│   ├── globals.css
-│   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Root redirect
+│   ├── (admin-dashboard)/dashboard/admin/  # Admin area
+│   └── api/                          # REST API (shared by all clients)
+│       ├── auth/                     # login, logout, refresh, register
+│       ├── user/                     # me, dashboard, collections, invoices
+│       └── admin/                    # clients, collections, invoices, schedule
 ├── components/
-│   ├── auth/                     # Login and registration forms
-│   ├── dashboard/                # Dashboard-specific widgets
-│   ├── invoices/                 # Invoice detail component
-│   ├── landing/                  # Landing page sections
-│   ├── layout/                   # Sidebar, mobile nav
-│   ├── shared/                   # Logo, badges, shared UI
-│   └── ui/                       # Base UI primitives (Radix/Shadcn)
+│   ├── ui/                           # Radix/Shadcn base primitives
+│   ├── auth/                         # Login + registration forms
+│   ├── dashboard/                    # Client dashboard widgets
+│   ├── admin/                        # Admin panel components
+│   ├── landing/                      # Landing page sections
+│   └── shared/                       # Logo, badges, shared UI
 ├── lib/
-│   ├── env.ts                    # Zod-validated environment variables
-│   ├── auth/
-│   │   ├── get-admin-user.ts     # Auth guard for admin API routes
-│   │   └── get-current-client.ts # Auth guard for user API routes
-│   └── supabase/
-│       ├── client.ts             # Browser Supabase client
-│       └── server.ts             # Server Supabase client (anon + service role)
-├── types/
-│   ├── index.ts                  # Domain types (Client, Invoice, Collection…)
-│   └── api.ts                    # ApiResponse<T> — standard response wrapper
-├── hooks/
-│   └── use-mobile.tsx
-├── middleware.ts                  # Auth session refresh + route protection
-├── docs/
-│   ├── PRD.md                    # Product Requirements Document
-│   ├── PROJECT_RULES.md          # Development standards and rules
-│   └── design-system/            # Design tokens, component previews
-├── index.html                    # Original HTML prototype (reference only)
-└── CLAUDE.md                     # AI agent project instructions
+│   ├── auth/                         # API route auth guards
+│   └── supabase/                     # Browser + server Supabase clients
+├── types/                            # TypeScript domain types
+├── supabase/migrations/              # Database migrations
+└── docs/
+    ├── api.md                        # API contract (all clients reference this)
+    ├── PROJECT_RULES.md              # Development standards
+    ├── PRD.md                        # Product requirements
+    └── design-system/                # Design tokens + component previews
 ```
+
+---
 
 ## User Roles
 
 RERU has two roles: `client` (default) and `admin`/`superadmin`.
 
-A database trigger (`on_auth_user_created_create_profile`) automatically creates a `profiles` row with `role: 'client'` for every new auth user. **No manual step is needed for client accounts.**
+A database trigger automatically creates a `profiles` row with `role: 'client'` for every new auth user.
 
 ### Creating an admin user
 
-1. Create the user in the [Supabase Auth dashboard](https://supabase.com/dashboard/project/crjgohirzgkxatywuvoz/auth/users) (or invite them via email).
-2. Copy the new user's UUID from the Auth dashboard.
-3. Promote them to admin via SQL:
+1. Create the user in the [Supabase Auth dashboard](https://supabase.com/dashboard/project/crjgohirzgkxatywuvoz/auth/users).
+2. Copy the new user's UUID.
+3. Promote to admin via SQL:
 
 ```sql
 UPDATE profiles SET role = 'admin' WHERE user_id = '<uuid>';
 ```
 
-Admin users must **not** have a `reru_clients` record — the app uses the absence of a client record combined with the `admin` role to route them to `/dashboard/admin` instead of the client dashboard.
+Admin users must **not** have a `reru_clients` record — the app uses the absence of a client record + `admin` role to route them to the admin dashboard.
 
-## Development Workflow
-
-```bash
-pnpm dev          # Start dev server at localhost:3000
-pnpm build        # Production build
-pnpm lint         # Run ESLint
-pnpm type-check   # TypeScript type check (tsc --noEmit)
-```
-
-Before committing, ensure lint and type-check pass cleanly.
+---
 
 ## Architecture
 
 - **Server Components by default** — `'use client'` only where interactivity requires it
-- **Multi-client API-first** — the Next.js app is both the web UI and the backend API. A complete `/api/user/*` route suite exposes all client data over HTTP so that web, USSD, Android, iOS, and desktop clients can consume the same backend without changes
-- **Client API surface** — authenticated REST endpoints for non-web clients:
-  ```
-  POST /api/auth/login             — returns session tokens (Bearer for mobile/USSD)
-  POST /api/auth/refresh           — exchanges refresh_token for a new token pair
-  POST /api/auth/logout
-  GET  /api/user/me                — profile + client record
-  GET  /api/user/dashboard         — all dashboard data in one call (USSD-optimised)
-  GET  /api/user/collections       — collection history (?status&limit&offset)
-  GET  /api/user/collections/upcoming
-  GET  /api/user/invoices          — invoice list (?status)
-  GET  /api/user/invoices/[id]
-  ```
-- **Supabase SSR** — auth session managed server-side via `@supabase/ssr`; middleware refreshes it on every request. Non-web clients use `Authorization: Bearer <access_token>` from the login response
+- **API-first** — the Next.js app is both the web UI and the shared backend. All `/api/user/*` endpoints accept Bearer tokens so Android, iOS, and USSD clients consume the same API without changes
+- **Supabase SSR** — session managed server-side; middleware refreshes it on every request. Non-web clients use `Authorization: Bearer <access_token>`
 - **RLS everywhere** — Row Level Security enforces data access at the database layer
 
-See `docs/PROJECT_RULES.md` for the full set of development standards.
+See [`docs/PROJECT_RULES.md`](docs/PROJECT_RULES.md) for the full development standards.
+
+---
 
 ## Non-Web Client Authentication (Android, iOS, USSD)
 
-All non-web clients — Android app, iOS app, USSD gateway — authenticate using the same email + password credentials that the web app uses, but receive session tokens in the response body instead of cookies.
+All non-web clients authenticate with the same credentials and receive tokens in the response body instead of cookies. See [`docs/api.md`](docs/api.md) for the full API reference.
 
-### Step 1 — Login
+### Quick start
 
+**1. Login**
 ```
 POST https://reru.odukar.com/api/auth/login
 Content-Type: application/json
@@ -205,84 +163,35 @@ Content-Type: application/json
 { "email": "user@example.com", "password": "..." }
 ```
 
-Success response:
-```json
-{
-  "ok": true,
-  "data": {
-    "user": { "id": "uuid", "email": "user@example.com" },
-    "session": {
-      "access_token": "eyJ...",
-      "refresh_token": "abc123...",
-      "expires_at": 1745678901
-    }
-  }
-}
-```
+Response includes `access_token`, `refresh_token`, and `expires_at`. Store securely (Android Keystore / iOS Keychain).
 
-Store `access_token`, `refresh_token`, and `expires_at` in secure storage:
-- **Android** — [EncryptedSharedPreferences](https://developer.android.com/reference/androidx/security/crypto/EncryptedSharedPreferences) or Android Keystore
-- **iOS** — Keychain Services
-- **USSD** — the gateway holds them in server-side session state for the duration of the USSD session (max 180 seconds); no persistent storage needed
-
-### Step 2 — Authenticated requests
-
-Include the access token as a Bearer token on every API call:
-
+**2. Authenticated requests**
 ```
 GET https://reru.odukar.com/api/user/dashboard
 Authorization: Bearer <access_token>
 ```
 
-All `/api/user/*` endpoints accept both cookies (web) and Bearer tokens (mobile/USSD).
-
-### Step 3 — Token refresh
-
-Access tokens expire after **1 hour** (`expires_at` is a Unix timestamp). Before making a request, check if the token has expired and refresh proactively:
-
+**3. Token refresh** (access tokens expire after 1 hour)
 ```
 POST https://reru.odukar.com/api/auth/refresh
 Content-Type: application/json
 
-{ "refresh_token": "abc123..." }
+{ "refresh_token": "..." }
 ```
 
-Success response (same shape as login):
-```json
-{
-  "ok": true,
-  "data": {
-    "user": { "id": "uuid", "email": "user@example.com" },
-    "session": {
-      "access_token": "eyJ...",
-      "refresh_token": "xyz789...",
-      "expires_at": 1745682501
-    }
-  }
-}
+If refresh returns `401`, the session has fully expired — redirect to login.
+
+---
+
+## Development Commands
+
+```bash
+pnpm dev          # Start dev server at localhost:3000
+pnpm build        # Production build
+pnpm lint         # Run ESLint
 ```
 
-Replace the stored tokens with the new values. If refresh returns `401`, the session has expired — redirect the user to login.
-
-### Step 4 — Logout
-
-```
-POST https://reru.odukar.com/api/auth/logout
-Authorization: Bearer <access_token>
-```
-
-Clear the stored tokens from secure storage after logout.
-
-### USSD-specific notes
-
-USSD sessions are stateless and time-limited (180 seconds). The recommended flow:
-
-1. Prompt user for email + password on first menu
-2. `POST /api/auth/login` → store tokens in gateway session state
-3. `GET /api/user/dashboard` with Bearer token → returns all data needed in one call (next collection, payment status, account status)
-4. Present the menu; respond to user input using data already fetched
-5. No token refresh is needed — the entire USSD session fits within the 1-hour token lifetime
-6. Discard tokens when the USSD session ends
+---
 
 ## Service Details
 
@@ -291,13 +200,13 @@ USSD sessions are stateless and time-limited (180 seconds). The recommended flow
 | Monthly | UGX 25,000 / month |
 | Annual | UGX 240,000 / year (saves UGX 60,000) |
 
-**Operator:** Mukono Countryside Mixed Farm Ltd  
-**Contact:** Brian Twesigye — 0778527802 / briantwesigye@gmail.com
+**Operator:** Mukono Countryside Mixed Farm Ltd
+**Contact:** Brian Twesigye — 0778527802
+
+---
 
 ## Roadmap
 
-See [docs/PRD.md](docs/PRD.md) for the full product requirements.
+See [`docs/PRD.md`](docs/PRD.md) for the full product requirements.
 
-**Current priority:** Admin dashboard — collection management, client management, invoice management, and payment tracking for operations staff.
-
-**Upcoming (v2):** SMS notifications (Africa's Talking), Mobile Money payment integration, waste tracking, environmental impact reports.
+**v2:** SMS notifications (Africa's Talking), Mobile Money payment integration, waste tracking, environmental impact reports.
