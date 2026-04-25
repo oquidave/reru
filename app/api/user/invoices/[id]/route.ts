@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/types/api'
 import type { Invoice } from '@/types'
 
@@ -14,9 +13,8 @@ export async function GET(
   }
 
   const { id } = await params
-  const supabase = await createSupabaseServerClient()
 
-  const { data: invoice, error } = await supabase
+  const { data: invoice, error } = await current.supabase
     .from('reru_invoices')
     .select('*')
     .eq('id', id)

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/types/api'
 import type { Client, Collection, Invoice } from '@/types'
 
@@ -18,20 +17,18 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Da
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createSupabaseServerClient()
-
   const [
     { data: collections, error: collectionsError },
     { data: pendingInvoice, error: pendingError },
     { count: overdueCount, error: overdueError },
   ] = await Promise.all([
-    supabase
+    current.supabase
       .from('reru_collections')
       .select('*')
       .eq('client_id', current.client.id)
       .order('scheduled_date', { ascending: false })
       .limit(5),
-    supabase
+    current.supabase
       .from('reru_invoices')
       .select('*')
       .eq('client_id', current.client.id)
@@ -39,7 +36,7 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Da
       .order('date', { ascending: true })
       .limit(1)
       .maybeSingle(),
-    supabase
+    current.supabase
       .from('reru_invoices')
       .select('*', { count: 'exact', head: true })
       .eq('client_id', current.client.id)

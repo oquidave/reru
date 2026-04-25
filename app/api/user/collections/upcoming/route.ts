@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/types/api'
 import type { Collection } from '@/types'
 
@@ -23,9 +22,8 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Co
   const { limit } = parsed.data
 
   const today = new Date().toISOString().split('T')[0]
-  const supabase = await createSupabaseServerClient()
 
-  const { data, error } = await supabase
+  const { data, error } = await current.supabase
     .from('reru_collections')
     .select('*')
     .eq('client_id', current.client.id)

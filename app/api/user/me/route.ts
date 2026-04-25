@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/types/api'
 import type { Client, Profile } from '@/types'
 
@@ -12,8 +11,7 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Me
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createSupabaseServerClient()
-  const { data: profile, error } = await supabase
+  const { data: profile, error } = await current.supabase
     .from('profiles')
     .select('role, full_name')
     .eq('user_id', current.user.id)
