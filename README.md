@@ -97,6 +97,7 @@ reru/
 │   ├── api/                      # API routes (server-side — shared by all clients)
 │   │   ├── auth/
 │   │   │   ├── login/            # POST — returns session tokens
+│   │   │   ├── refresh/          # POST — exchange refresh_token for new token pair
 │   │   │   ├── logout/           # POST
 │   │   │   └── register/         # POST — new client self-registration
 │   │   ├── user/                 # Authenticated client endpoints (web, mobile, USSD)
@@ -177,6 +178,7 @@ Before committing, ensure lint and type-check pass cleanly.
 - **Client API surface** — authenticated REST endpoints for non-web clients:
   ```
   POST /api/auth/login             — returns session tokens (Bearer for mobile/USSD)
+  POST /api/auth/refresh           — exchanges refresh_token for a new token pair
   POST /api/auth/logout
   GET  /api/user/me                — profile + client record
   GET  /api/user/dashboard         — all dashboard data in one call (USSD-optimised)
@@ -189,6 +191,98 @@ Before committing, ensure lint and type-check pass cleanly.
 - **RLS everywhere** — Row Level Security enforces data access at the database layer
 
 See `docs/PROJECT_RULES.md` for the full set of development standards.
+
+## Non-Web Client Authentication (Android, iOS, USSD)
+
+All non-web clients — Android app, iOS app, USSD gateway — authenticate using the same email + password credentials that the web app uses, but receive session tokens in the response body instead of cookies.
+
+### Step 1 — Login
+
+```
+POST https://reru.odukar.com/api/auth/login
+Content-Type: application/json
+
+{ "email": "user@example.com", "password": "..." }
+```
+
+Success response:
+```json
+{
+  "ok": true,
+  "data": {
+    "user": { "id": "uuid", "email": "user@example.com" },
+    "session": {
+      "access_token": "eyJ...",
+      "refresh_token": "abc123...",
+      "expires_at": 1745678901
+    }
+  }
+}
+```
+
+Store `access_token`, `refresh_token`, and `expires_at` in secure storage:
+- **Android** — [EncryptedSharedPreferences](https://developer.android.com/reference/androidx/security/crypto/EncryptedSharedPreferences) or Android Keystore
+- **iOS** — Keychain Services
+- **USSD** — the gateway holds them in server-side session state for the duration of the USSD session (max 180 seconds); no persistent storage needed
+
+### Step 2 — Authenticated requests
+
+Include the access token as a Bearer token on every API call:
+
+```
+GET https://reru.odukar.com/api/user/dashboard
+Authorization: Bearer <access_token>
+```
+
+All `/api/user/*` endpoints accept both cookies (web) and Bearer tokens (mobile/USSD).
+
+### Step 3 — Token refresh
+
+Access tokens expire after **1 hour** (`expires_at` is a Unix timestamp). Before making a request, check if the token has expired and refresh proactively:
+
+```
+POST https://reru.odukar.com/api/auth/refresh
+Content-Type: application/json
+
+{ "refresh_token": "abc123..." }
+```
+
+Success response (same shape as login):
+```json
+{
+  "ok": true,
+  "data": {
+    "user": { "id": "uuid", "email": "user@example.com" },
+    "session": {
+      "access_token": "eyJ...",
+      "refresh_token": "xyz789...",
+      "expires_at": 1745682501
+    }
+  }
+}
+```
+
+Replace the stored tokens with the new values. If refresh returns `401`, the session has expired — redirect the user to login.
+
+### Step 4 — Logout
+
+```
+POST https://reru.odukar.com/api/auth/logout
+Authorization: Bearer <access_token>
+```
+
+Clear the stored tokens from secure storage after logout.
+
+### USSD-specific notes
+
+USSD sessions are stateless and time-limited (180 seconds). The recommended flow:
+
+1. Prompt user for email + password on first menu
+2. `POST /api/auth/login` → store tokens in gateway session state
+3. `GET /api/user/dashboard` with Bearer token → returns all data needed in one call (next collection, payment status, account status)
+4. Present the menu; respond to user input using data already fetched
+5. No token refresh is needed — the entire USSD session fits within the 1-hour token lifetime
+6. Discard tokens when the USSD session ends
 
 ## Service Details
 
