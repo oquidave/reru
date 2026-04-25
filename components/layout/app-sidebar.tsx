@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Truck, FileText, ScrollText, LogOut } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { Client } from '@/types'
 import { cn } from '@/lib/utils'
@@ -23,10 +22,8 @@ interface AppSidebarProps {
 export function AppSidebar({ client }: AppSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createSupabaseBrowserClient()
-
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/home')
     toast.success('Signed out successfully')
   }

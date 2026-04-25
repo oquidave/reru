@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, LayoutDashboard, Truck, FileText, ScrollText, LogOut } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { Client } from '@/types'
 import { cn } from '@/lib/utils'
@@ -25,12 +24,11 @@ interface MobileNavProps {
 export function MobileNav({ client }: MobileNavProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createSupabaseBrowserClient()
   const [open, setOpen] = useState(false)
 
   async function handleSignOut() {
     setOpen(false)
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/home')
     toast.success('Signed out successfully')
   }
