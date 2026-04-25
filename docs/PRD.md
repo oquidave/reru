@@ -140,6 +140,19 @@ The admin dashboard is the next feature to be built. It will be a protected sect
 
 ## 6. Upcoming Features (v2)
 
+### 6.0 Additional Client Interfaces
+
+The API-first architecture means RERU's backend already supports non-web clients without changes. Planned client interfaces:
+
+| Client | Access Method | Priority |
+|---|---|---|
+| **USSD** | `POST /api/auth/login` + `/api/user/dashboard` via Africa's Talking USSD gateway | High — reaches non-smartphone users |
+| **Android app** | Bearer token auth + `/api/user/*` REST endpoints | Medium |
+| **iOS app** | Bearer token auth + `/api/user/*` REST endpoints | Medium |
+| **Desktop app** | Cookie-based or Bearer token auth + full API surface | Low |
+
+USSD is the highest-priority non-web interface: it reaches residents without smartphones and requires only the `/api/user/dashboard` endpoint (single round-trip within the 180-second USSD session timeout).
+
 ### 6.1 Real-Time SMS Notifications
 - Collection reminders sent the day before via Africa's Talking API
 - Payment due reminders (sent on the 8th of each month)
@@ -242,8 +255,17 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 ### Key Architectural Decisions
 
 - **App Router (Next.js 15)**: All pages use the App Router with server and client components.
-- **API-first mutations**: All data mutations go through Next.js API routes (`app/api/**`), never direct Supabase calls from client components.
-- **Supabase SSR**: Auth session is managed server-side using `@supabase/ssr`, with middleware refreshing the session on every request.
+- **Multi-client API-first architecture**: The Next.js app serves as both the web interface and the backend API. All client data is exposed through a stable REST API surface (`app/api/**`) that any client — web, mobile, USSD, or desktop — can consume. Server components in the web app may read Supabase directly for optimal SSR performance, but all mutations and all external client access go through API routes.
+- **Client API surface** (`/api/user/*`): A complete set of authenticated endpoints for non-web clients (USSD gateway, Android/iOS apps, desktop app):
+  - `POST /api/auth/login` — returns session tokens (cookie-based for web, Bearer token for mobile/USSD)
+  - `POST /api/auth/logout`
+  - `GET /api/user/me` — profile + client record
+  - `GET /api/user/dashboard` — aggregated dashboard data in one call (optimised for USSD 180s session limit)
+  - `GET /api/user/collections` — collection history with pagination and status filter
+  - `GET /api/user/collections/upcoming` — next N scheduled collections
+  - `GET /api/user/invoices` — invoice list with status filter
+  - `GET /api/user/invoices/[id]` — invoice detail
+- **Supabase SSR**: Auth session is managed server-side using `@supabase/ssr`, with middleware refreshing the session on every request. Non-web clients authenticate via Bearer token (`Authorization: Bearer <access_token>` from the login response).
 - **RLS everywhere**: Row Level Security is enabled on all user-data tables; application code never bypasses it.
 
 ---
@@ -299,7 +321,8 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 - Multi-estate or multi-city expansion
 - Commercial / business client management (households only)
 - Waste bin / IoT sensor integration
-- Native mobile app (iOS / Android)
+- Native mobile app builds (iOS / Android) — the API foundation is in place; building the app clients is v2
+- USSD client implementation — the API foundation is in place; the USSD gateway integration is v2
 - Multi-language support
 - Carbon credit marketplace
 - Third-party recycling partner portal

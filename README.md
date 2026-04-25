@@ -94,8 +94,20 @@ reru/
 │   │   ├── invoices/             # Invoice management
 │   │   ├── schedule/             # Today's schedule
 │   │   └── layout.tsx            # Admin shell (sidebar + nav)
-│   ├── api/                      # API routes (server-side mutations)
-│   │   └── auth/register/
+│   ├── api/                      # API routes (server-side — shared by all clients)
+│   │   ├── auth/
+│   │   │   ├── login/            # POST — returns session tokens
+│   │   │   ├── logout/           # POST
+│   │   │   └── register/         # POST — new client self-registration
+│   │   ├── user/                 # Authenticated client endpoints (web, mobile, USSD)
+│   │   │   ├── me/               # GET — profile + client record
+│   │   │   ├── dashboard/        # GET — aggregated dashboard data
+│   │   │   ├── collections/      # GET — history + /upcoming
+│   │   │   └── invoices/         # GET — list + /[id]
+│   │   └── admin/                # Admin-only endpoints
+│   │       ├── clients/
+│   │       ├── collections/
+│   │       └── invoices/
 │   ├── globals.css
 │   ├── layout.tsx                # Root layout
 │   └── page.tsx                  # Root redirect
@@ -108,11 +120,16 @@ reru/
 │   ├── shared/                   # Logo, badges, shared UI
 │   └── ui/                       # Base UI primitives (Radix/Shadcn)
 ├── lib/
+│   ├── env.ts                    # Zod-validated environment variables
+│   ├── auth/
+│   │   ├── get-admin-user.ts     # Auth guard for admin API routes
+│   │   └── get-current-client.ts # Auth guard for user API routes
 │   └── supabase/
 │       ├── client.ts             # Browser Supabase client
-│       └── server.ts             # Server Supabase client
+│       └── server.ts             # Server Supabase client (anon + service role)
 ├── types/
-│   └── index.ts                  # Shared TypeScript types
+│   ├── index.ts                  # Domain types (Client, Invoice, Collection…)
+│   └── api.ts                    # ApiResponse<T> — standard response wrapper
 ├── hooks/
 │   └── use-mobile.tsx
 ├── middleware.ts                  # Auth session refresh + route protection
@@ -156,8 +173,19 @@ Before committing, ensure lint and type-check pass cleanly.
 ## Architecture
 
 - **Server Components by default** — `'use client'` only where interactivity requires it
-- **API-first mutations** — all writes go through `app/api/**` routes, never direct Supabase from the browser
-- **Supabase SSR** — auth session managed server-side via `@supabase/ssr`; middleware refreshes it on every request
+- **Multi-client API-first** — the Next.js app is both the web UI and the backend API. A complete `/api/user/*` route suite exposes all client data over HTTP so that web, USSD, Android, iOS, and desktop clients can consume the same backend without changes
+- **Client API surface** — authenticated REST endpoints for non-web clients:
+  ```
+  POST /api/auth/login             — returns session tokens (Bearer for mobile/USSD)
+  POST /api/auth/logout
+  GET  /api/user/me                — profile + client record
+  GET  /api/user/dashboard         — all dashboard data in one call (USSD-optimised)
+  GET  /api/user/collections       — collection history (?status&limit&offset)
+  GET  /api/user/collections/upcoming
+  GET  /api/user/invoices          — invoice list (?status)
+  GET  /api/user/invoices/[id]
+  ```
+- **Supabase SSR** — auth session managed server-side via `@supabase/ssr`; middleware refreshes it on every request. Non-web clients use `Authorization: Bearer <access_token>` from the login response
 - **RLS everywhere** — Row Level Security enforces data access at the database layer
 
 See `docs/PROJECT_RULES.md` for the full set of development standards.
