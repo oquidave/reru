@@ -1,6 +1,14 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Next.js Fast Refresh in development evaluates code via eval(); without 'unsafe-eval'
+// the dev client bundle throws a CSP error and the app never hydrates (forms then fall
+// back to a native GET submit, leaking field values into the URL). Allow it in dev only.
+const scriptSrc =
+  process.env.NODE_ENV === 'production'
+    ? "script-src 'self' 'unsafe-inline' fonts.googleapis.com"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com"
+
 const securityHeaders = {
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
@@ -8,7 +16,7 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline' fonts.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co",
+    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co`,
 }
 
 function applySecurityHeaders(response: NextResponse): NextResponse {
