@@ -6,6 +6,7 @@ import { Logo } from '@/components/shared/logo'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatDate, formatUGX } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { PayWithMomoDialog } from '@/components/invoices/pay-with-momo-dialog'
 import type { Invoice, Client } from '@/types'
 
 interface InvoiceDetailProps {
@@ -186,9 +187,20 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
           </div>
         </div>
 
-        <Button onClick={handleDownloadPdf} className="bg-green-700 hover:bg-green-600 text-white gap-2">
-          <Download size={16} /> Download PDF
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          {invoice.status !== 'paid' && (
+            <PayWithMomoDialog invoice={invoice} defaultPhone={client.phone} />
+          )}
+          <Button
+            onClick={handleDownloadPdf}
+            variant={invoice.status !== 'paid' ? 'outline' : 'default'}
+            className={invoice.status !== 'paid'
+              ? 'gap-2'
+              : 'bg-green-700 hover:bg-green-600 text-white gap-2'}
+          >
+            <Download size={16} /> Download PDF
+          </Button>
+        </div>
       </div>
     </div>
   )

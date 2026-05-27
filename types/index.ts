@@ -50,6 +50,31 @@ export interface Collection {
 
 export type UserRole = 'client' | 'admin' | 'superadmin'
 export type PaymentMethod = 'mtn_momo' | 'airtel' | 'bank_transfer' | 'cash'
+
+// Lifecycle of an in-app mobile-money payment attempt (ioTec collection).
+export type PaymentStatus = 'pending' | 'sent' | 'success' | 'failed' | 'cancelled'
+
+export interface Payment {
+  id: string
+  invoice_id: string
+  client_id: string
+  /** Our reference sent to ioTec as externalId; unique per attempt. */
+  external_id: string
+  /** ioTec's transaction id, available once the collection is created. */
+  iotec_id: string | null
+  amount: number
+  currency: string
+  payer_phone: string
+  /** ioTec vendor that processed the payment (e.g. Mtn, Airtel). */
+  vendor: string | null
+  status: PaymentStatus
+  status_code: string | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+  processed_at: string | null
+}
+
 export type AuditAction =
   | 'suspend_client'
   | 'reactivate_client'

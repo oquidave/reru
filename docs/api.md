@@ -317,6 +317,49 @@ Single invoice by ID. Returns `404` if the invoice belongs to a different client
 
 ---
 
+### `POST /api/user/invoices/:id/pay`
+
+Start an in-app mobile-money payment for the caller's own unpaid invoice (ioTec collection).
+ioTec sends an approval prompt to the payer's phone. The amount is always the invoice total —
+it is never taken from the request. An in-flight attempt for the same invoice is reused rather
+than charging twice.
+
+**Request body**
+
+| Field | Type | Description |
+|---|---|---|
+| `phone` | string? | Mobile money number. Defaults to the client's stored phone. |
+
+**Response `200`**
+```json
+{
+  "ok": true,
+  "data": { "paymentId": "uuid", "status": "pending" }
+}
+```
+
+**Errors:** `400` already paid / invalid body · `404` not your invoice · `502` provider unreachable · `503` payments not enabled (no ioTec credentials configured).
+
+---
+
+### `GET /api/user/payments/:id`
+
+Status of a payment attempt. While the payment is non-terminal, this endpoint reconciles
+against ioTec, so polling it drives the payment to completion even if the webhook never arrives.
+Poll every ~4s until `status` is terminal (`success` \| `failed` \| `cancelled`).
+
+**Response `200`**
+```json
+{
+  "ok": true,
+  "data": { ...Payment }
+}
+```
+
+Returns `404` if the payment belongs to a different client.
+
+---
+
 ## Admin Endpoints
 
 All `/api/admin/*` endpoints require authentication with an admin or superadmin role. A client-role token will receive `401`.
@@ -795,13 +838,48 @@ completed_at   string?  ISO 8601
 created_at     string   ISO 8601
 ```
 
+### Payment
+```
+id            string   UUID
+invoice_id    string   UUID
+client_id     string   UUID
+external_id   string   our reference sent to ioTec
+iotec_id      string?  ioTec transaction id
+amount        number   UGX
+currency      string   "UGX"
+payer_phone   string
+vendor        string?  ioTec vendor (e.g. "Mtn", "Airtel")
+status        string   "pending" | "sent" | "success" | "failed" | "cancelled"
+status_code   string?
+error_message string?
+created_at    string   ISO 8601
+updated_at    string   ISO 8601
+processed_at  string?  ISO 8601 — set when terminal
+```
+
+---
+
+## Webhooks
+
+### `POST /api/webhooks/iotec/collection`
+
+ioTec calls this when a collection reaches a terminal status. ioTec attaches a shared secret as
+`Authorization: Bearer <IOTEC_WEBHOOK_SECRET>`; requests that don't match are rejected `401`.
+The payload is still treated as an untrusted trigger: the server re-queries ioTec's status
+endpoint before applying any change, and the update is idempotent. Authorized calls respond
+`200 { ok: true }`.
+
+Configure this URL — plus the Security Header (`Authorization`) and its value
+(`Bearer <secret>`) — in the ioTec Pay portal Settings tab, and set the same secret as
+`IOTEC_WEBHOOK_SECRET` in the server environment.
+
 ---
 
 ## Known Gaps (planned)
 
-- Rate limiting on `/api/auth/login` and `/api/auth/register` — required before production
+- Rate limiting on `/api/auth/login`, `/api/auth/register`, and `/api/user/invoices/:id/pay` — required before production
 - `GET /api/admin/clients?status=suspended` — suspended clients not yet queryable via API
 - `GET /api/admin/collections/:id` and `GET /api/admin/invoices/:id` — single-item admin detail endpoints
 - `POST /api/user/device-token` — push notification token registration (v2)
 - SMS notification triggers via Africa's Talking (v2)
-- Mobile payment integration: MTN MoMo, Airtel Money (v2)
+- Disbursements / payouts via ioTec — not implemented (collections only)
