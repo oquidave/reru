@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
+import { createSupabaseServiceRoleClient } from '@/lib/supabase/server'
 import { finalizeCollection } from '@/lib/payments/finalize'
 import type { ApiResponse } from '@/types/api'
 import type { Payment } from '@/types'
@@ -34,7 +34,7 @@ export async function GET(
 
   let result = payment as Payment
   if (result.status === 'pending' || result.status === 'sent') {
-    const service = await createSupabaseServerClientWithServiceRole()
+    const service = createSupabaseServiceRoleClient()
     result = await finalizeCollection(service, result)
   }
 

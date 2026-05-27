@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { env } from '@/lib/env'
-import { createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
+import { createSupabaseServiceRoleClient } from '@/lib/supabase/server'
 import { finalizeCollection } from '@/lib/payments/finalize'
 import type { Payment } from '@/types'
 
@@ -47,7 +47,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const service = await createSupabaseServerClientWithServiceRole()
+    const service = createSupabaseServiceRoleClient()
 
     let query = service.from('reru_payments').select('*')
     query = iotecId ? query.eq('iotec_id', iotecId) : query.eq('external_id', externalId as string)
