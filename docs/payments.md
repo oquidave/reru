@@ -70,9 +70,115 @@ All API calls send `Authorization: Bearer <access_token>`.
 
 Base URL: `https://pay.iotec.io` (`IOTEC_API_URL`).
 
-**Collect request fields:** `payer` (MSISDN), `amount` (≥500), `externalId` (our reference),
-`currency` (`UGX`), `category` (`MobileMoney`), `walletId` (optional, our merchant wallet),
-`payerNote`. ioTec resolves the network (MTN vs Airtel) from the number — no network picker.
+### Request & response payloads
+
+Built in `lib/iotec/client.ts`. All API calls go through `authedFetch`, which attaches
+`Authorization: Bearer <access_token>`.
+
+#### 1. Token request
+
+```http
+POST https://id.iotec.io/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=<IOTEC_CLIENT_ID>&client_secret=<IOTEC_CLIENT_SECRET>
+```
+
+```json
+{ "access_token": "eyJhbGciOi...", "expires_in": 3600, "token_type": "Bearer" }
+```
+
+#### 2. Initiate collection
+
+```http
+POST https://pay.iotec.io/api/collections/collect
+Content-Type: application/json
+Authorization: Bearer <access_token>
+```
+
+Request body — the exact object RERU sends:
+
+| Field | Type | Required | What RERU sends |
+|---|---|---|---|
+| `payer` | string | yes | Payer MSISDN — the client's phone with spaces stripped (e.g. `0772123456`, `+256772123456`). ioTec resolves MTN vs Airtel from it; no network picker. |
+| `amount` | integer | yes (≥500) | `invoice.total` in UGX, read server-side |
+| `externalId` | string | yes | A generated UUID, also stored as `reru_payments.external_id` |
+| `currency` | string | yes | `"UGX"` |
+| `category` | string | yes | `"MobileMoney"` |
+| `walletId` | string | optional | `IOTEC_WALLET_ID` when set; **omitted from the JSON** otherwise |
+| `payerNote` | string | optional | `"RERU invoice <invoice id>"` |
+
+```json
+{
+  "payer": "0772123456",
+  "amount": 500,
+  "externalId": "8f3c1e90-4b2a-4d6e-9c10-2a7b5e8f1d34",
+  "currency": "UGX",
+  "category": "MobileMoney",
+  "walletId": "b1d2...e9",
+  "payerNote": "RERU invoice INV-TEST-500"
+}
+```
+
+> Optional fields left unset are dropped by `JSON.stringify` (not sent as `null`). So with no
+> `IOTEC_WALLET_ID`, the `walletId` key is absent and funds go to the account's default wallet.
+
+Response — `CollectionViewModel` (initial `status` is typically `Pending` or `SentToVendor`):
+
+```json
+{
+  "id": "0e7d4c2a-...",
+  "externalId": "8f3c1e90-4b2a-4d6e-9c10-2a7b5e8f1d34",
+  "status": "Pending",
+  "statusCode": null,
+  "amount": 500,
+  "currency": "UGX",
+  "vendor": "Mtn",
+  "vendorTransactionId": null,
+  "createdAt": "2026-05-27T10:14:52Z",
+  "lastUpdated": "2026-05-27T10:14:52Z",
+  "processedAt": null
+}
+```
+
+We persist `id` → `reru_payments.iotec_id`, plus the mapped `status` and `vendor`.
+
+#### 3. Status check
+
+```http
+GET https://pay.iotec.io/api/collections/status/{id}            (by ioTec id)
+GET https://pay.iotec.io/api/collections/external-id/{externalId}  (by our reference)
+Authorization: Bearer <access_token>
+```
+
+Returns the same `CollectionViewModel`. After approval a successful one looks like:
+
+```json
+{
+  "id": "0e7d4c2a-...",
+  "externalId": "8f3c1e90-...",
+  "status": "Success",
+  "statusCode": "MM-0000",
+  "amount": 500,
+  "currency": "UGX",
+  "vendor": "Mtn",
+  "vendorTransactionId": "MP260527.1014.A12345",
+  "processedAt": "2026-05-27T10:15:30Z"
+}
+```
+
+#### 4. Webhook payload (inbound from ioTec)
+
+ioTec POSTs the transaction detail (the same `CollectionViewModel` shape) to our callback when a
+collection reaches a terminal status. We only read `id` / `externalId` to locate the payment row,
+then **re-query** the status endpoint above before trusting anything — so only those two fields
+are relied upon:
+
+```json
+{ "id": "0e7d4c2a-...", "externalId": "8f3c1e90-...", "status": "Success", "...": "..." }
+```
+
+### Status / vendor mapping
 
 **Status / vendor values** we map from:
 
