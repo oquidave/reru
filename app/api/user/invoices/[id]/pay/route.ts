@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getCurrentClient } from '@/lib/auth/get-current-client'
-import { createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
+import { createSupabaseServiceRoleClient } from '@/lib/supabase/server'
 import { initiateCollection, isIotecConfigured, IotecError } from '@/lib/iotec/client'
 import { mapIotecStatus } from '@/lib/iotec/types'
 import type { ApiResponse } from '@/types/api'
@@ -60,7 +60,8 @@ export async function POST(
   const phone = (parsed.data.phone ?? current.client.phone).replace(/\s+/g, '')
 
   // reru_payments writes require the service role (no client insert policy).
-  const service = await createSupabaseServerClientWithServiceRole()
+  // Must be the cookie-less client, or the user's session would make RLS apply.
+  const service = createSupabaseServiceRoleClient()
 
   // Idempotency: reuse an in-flight attempt rather than charging twice.
   const { data: inflight } = await service
