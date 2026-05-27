@@ -317,6 +317,8 @@ Single invoice by ID. Returns `404` if the invoice belongs to a different client
 
 ---
 
+> Full integration guide (flow, config, security, testing, troubleshooting): [`docs/payments.md`](./payments.md).
+
 ### `POST /api/user/invoices/:id/pay`
 
 Start an in-app mobile-money payment for the caller's own unpaid invoice (ioTec collection).
