@@ -9,7 +9,12 @@ export class AfricasTalkingError extends Error {
   }
 }
 
-const AT_SMS_URL = 'https://api.africastalking.com/version1/messaging'
+// The sandbox app authenticates only against the sandbox host; live apps against the
+// production host. Using the wrong host returns 401 "authentication is invalid".
+const AT_HOSTS = {
+  sandbox: 'https://api.sandbox.africastalking.com',
+  live:    'https://api.africastalking.com',
+}
 
 /** True when Africa's Talking credentials are configured. */
 export function isAfricasTalkingConfigured(): boolean {
@@ -28,18 +33,25 @@ export async function sendSms(to: string, message: string): Promise<AfricasTalki
     throw new AfricasTalkingError('Africa\'s Talking credentials are not configured')
   }
 
-  const res = await fetch(AT_SMS_URL, {
+  // Trim to defend against trailing newlines/spaces in env values (a common 401 cause).
+  const username = env.AFRICAS_TALKING_USERNAME.trim()
+  const apiKey = env.AFRICAS_TALKING_API_KEY.trim()
+  const from = env.AFRICAS_TALKING_SENDER_ID.trim()
+  const host = username === 'sandbox' ? AT_HOSTS.sandbox : AT_HOSTS.live
+
+  // Bulk JSON endpoint per AT docs: https://developers.africastalking.com/docs/sms/sending/bulk
+  const res = await fetch(`${host}/version1/messaging/bulk`, {
     method: 'POST',
     headers: {
-      apiKey: env.AFRICAS_TALKING_API_KEY,
+      apiKey,
       Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: new URLSearchParams({
-      username: env.AFRICAS_TALKING_USERNAME,
-      to,
+    body: JSON.stringify({
+      username,
       message,
-      from: env.AFRICAS_TALKING_SENDER_ID,
+      senderId: from,
+      phoneNumbers: [to],
     }),
   })
 
