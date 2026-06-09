@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Truck, FileText, ScrollText, LogOut } from 'lucide-react'
+import { LayoutDashboard, Truck, FileText, ScrollText, UserCog, LogOut } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import { toast } from 'sonner'
 import type { Client } from '@/types'
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard/collections', label: 'Collections', icon: Truck },
   { href: '/dashboard/invoices',    label: 'Invoices',   icon: FileText },
   { href: '/dashboard/agreement',   label: 'Agreement',  icon: ScrollText },
+  { href: '/dashboard/profile',     label: 'Profile',    icon: UserCog },
 ]
 
 interface AppSidebarProps {
