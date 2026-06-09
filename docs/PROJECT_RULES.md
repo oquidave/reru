@@ -609,7 +609,7 @@ curl -X POST http://localhost:3000/api/auth/logout \
 ## Deployment
 
 ### Vercel
-- Main branch auto-deploys to production (`https://reru.odukar.com`)
+- Main branch auto-deploys to production (`https://reru.ug`)
 - Pull requests create preview deployments
 - Environment variables set in Vercel dashboard (never in `vercel.json`)
 

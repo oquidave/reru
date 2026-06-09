@@ -20,7 +20,7 @@ export async function POST(request: Request): Promise<NextResponse<ApiResponse<{
 
     // Always returns ok:true — never reveal whether the email exists
     await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${env.NEXT_PUBLIC_BASE_URL ?? 'https://reru.odukar.com'}/auth/reset-password`,
+      redirectTo: `${env.NEXT_PUBLIC_BASE_URL ?? 'https://reru.ug'}/auth/reset-password`,
     })
 
     return NextResponse.json({ ok: true, data: { message: 'If that email is registered, a reset link has been sent.' } })

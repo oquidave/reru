@@ -1,6 +1,6 @@
 # RERU API Reference
 
-**Base URL (production):** `https://reru.odukar.com`  
+**Base URL (production):** `https://reru.ug`  
 **Base URL (local dev):** `http://localhost:3002`
 
 All endpoints return JSON. All request bodies must be `Content-Type: application/json`.

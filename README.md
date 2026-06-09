@@ -1,6 +1,6 @@
 # RERU — Reusable Resources
 
-A household waste collection and recycling service management platform for Nsasa Estate, Mukono District, Uganda. Live at [reru.odukar.com](https://reru.odukar.com).
+A household waste collection and recycling service management platform for Nsasa Estate, Mukono District, Uganda. Live at [reru.ug](https://reru.ug).
 
 ## Platform Ecosystem
 
@@ -157,7 +157,7 @@ All non-web clients authenticate with the same credentials and receive tokens in
 
 **1. Login**
 ```
-POST https://reru.odukar.com/api/auth/login
+POST https://reru.ug/api/auth/login
 Content-Type: application/json
 
 { "email": "user@example.com", "password": "..." }
@@ -167,13 +167,13 @@ Response includes `access_token`, `refresh_token`, and `expires_at`. Store secur
 
 **2. Authenticated requests**
 ```
-GET https://reru.odukar.com/api/user/dashboard
+GET https://reru.ug/api/user/dashboard
 Authorization: Bearer <access_token>
 ```
 
 **3. Token refresh** (access tokens expire after 1 hour)
 ```
-POST https://reru.odukar.com/api/auth/refresh
+POST https://reru.ug/api/auth/refresh
 Content-Type: application/json
 
 { "refresh_token": "..." }

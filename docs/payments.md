@@ -313,11 +313,11 @@ is idempotent: terminal payments are returned unchanged, and a paid invoice is a
 
 All are optional in the schema so the app builds/runs before onboarding; when credentials are
 absent, `POST .../pay` returns `503`. Set these in **Vercel → Production** (the callback and the
-live flow run on `reru.odukar.com`, not local `.env.local`).
+live flow run on `reru.ug`, not local `.env.local`).
 
 ### ioTec Pay portal (Settings tab)
 
-- **Callback URL:** `https://reru.odukar.com/api/webhooks/iotec/collection`
+- **Callback URL:** `https://reru.ug/api/webhooks/iotec/collection`
 - **Security Header:** `Authorization`
 - **Security Header Value:** `Bearer <IOTEC_WEBHOOK_SECRET>` (must match the env value)
 

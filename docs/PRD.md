@@ -18,7 +18,7 @@ RERU is a household waste collection and recycling service management platform t
 - **Product Name:** RERU (Reusable Resources)
 - **Operator:** Mukono Countryside Mixed Farm Ltd
 - **Service Area:** Nsasa Estate, Mukono District, Uganda
-- **Deployment:** Web application (mobile-responsive), live at [reru.odukar.com](https://reru.odukar.com)
+- **Deployment:** Web application (mobile-responsive), live at [reru.ug](https://reru.ug)
 - **Current State:** Production — Next.js 15 app with Supabase backend, deployed on Vercel
 
 ---
