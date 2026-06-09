@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, LayoutDashboard, Truck, FileText, ScrollText, LogOut } from 'lucide-react'
+import { Menu, X, LayoutDashboard, Truck, FileText, ScrollText, UserCog, LogOut } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { toast } from 'sonner'
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/dashboard/collections', label: 'Collections', icon: Truck },
   { href: '/dashboard/invoices',    label: 'Invoices',   icon: FileText },
   { href: '/dashboard/agreement',   label: 'Agreement',  icon: ScrollText },
+  { href: '/dashboard/profile',     label: 'Profile',    icon: UserCog },
 ]
 
 interface MobileNavProps {
