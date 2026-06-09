@@ -41,13 +41,14 @@ export default async function AgreementPage() {
 
   const { data: client } = await supabase
     .from('reru_clients')
-    .select('*')
+    .select('*, service_locations(name)')
     .eq('user_id', user.id)
     .single()
 
   if (!client) redirect('/auth/login')
 
-  const typedClient = client as Client
+  const { service_locations, ...clientRest } = client as typeof client & { service_locations: { name: string } | null }
+  const typedClient = { ...clientRest, location: service_locations?.name ?? null } as unknown as Client
 
   return (
     <div className="max-w-[700px] mx-auto">
@@ -67,8 +68,8 @@ export default async function AgreementPage() {
             <p className="font-semibold text-reru-text-primary">{typedClient.name}</p>
           </div>
           <div>
-            <p className="text-reru-text-muted">Zone</p>
-            <p className="font-semibold text-reru-text-primary">{typedClient.zone}</p>
+            <p className="text-reru-text-muted">Location</p>
+            <p className="font-semibold text-reru-text-primary">{typedClient.location}</p>
           </div>
           <div>
             <p className="text-reru-text-muted">Plan</p>

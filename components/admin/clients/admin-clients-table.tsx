@@ -28,7 +28,7 @@ export function AdminClientsTable({ clients }: AdminClientsTableProps) {
           <thead>
             <tr className="border-b border-reru-border">
               <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Name</th>
-              <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Zone</th>
+              <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Location</th>
               <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Plan</th>
               <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Status</th>
               <th className="px-6 py-3 text-left reru-overline text-reru-text-muted">Paid through</th>
@@ -46,7 +46,7 @@ export function AdminClientsTable({ clients }: AdminClientsTableProps) {
                   <p className="text-md font-semibold text-reru-text-primary">{client.name}</p>
                   <p className="text-sm text-reru-text-muted">{client.phone}</p>
                 </td>
-                <td className="px-6 py-4 text-md text-reru-text-secondary">{client.zone}</td>
+                <td className="px-6 py-4 text-md text-reru-text-secondary">{client.location ?? '—'}</td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary capitalize">{client.plan}</td>
                 <td className="px-6 py-4"><StatusBadge status={client.status} /></td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary whitespace-nowrap">

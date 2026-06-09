@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import type { ServiceLocation } from '@/types'
 
 const step1Schema = z.object({
   name:  z.string().min(2, 'Name must be at least 2 characters'),
@@ -21,7 +22,7 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   address:        z.string().min(5, 'Address must be at least 5 characters'),
-  zone:           z.enum(['Zone A', 'Zone B', 'Zone C']),
+  location_id:    z.string().uuid('Select a location'),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
   plan:           z.enum(['monthly', 'annual']),
 })
@@ -35,6 +36,7 @@ export function AdminAddClientDialog() {
   const [step, setStep] = useState<1 | 2>(1)
   const [step1Data, setStep1Data] = useState<Step1Values | null>(null)
   const [loading, setLoading] = useState(false)
+  const [locations, setLocations] = useState<ServiceLocation[]>([])
 
   const form1 = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
@@ -43,8 +45,19 @@ export function AdminAddClientDialog() {
 
   const form2 = useForm<Step2Values>({
     resolver: zodResolver(step2Schema),
-    defaultValues: { address: '', zone: 'Zone A', collection_day: 'Monday', plan: 'monthly' },
+    defaultValues: { address: '', collection_day: 'Monday', plan: 'monthly' },
   })
+
+  useEffect(() => {
+    if (open && locations.length === 0) {
+      fetch('/api/admin/locations')
+        .then((r) => r.json())
+        .then((json: { ok: boolean; data?: ServiceLocation[] }) => {
+          if (json.ok && json.data) setLocations(json.data.filter((l) => l.active))
+        })
+        .catch(() => {})
+    }
+  }, [open, locations.length])
 
   function handleStep1(values: Step1Values) {
     setStep1Data(values)
@@ -145,19 +158,21 @@ export function AdminAddClientDialog() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Zone</Label>
+              <Label>Location</Label>
               <Select
-                defaultValue="Zone A"
-                onValueChange={(v) => form2.setValue('zone', v as Step2Values['zone'])}
+                onValueChange={(v) => form2.setValue('location_id', v)}
                 disabled={loading}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select a location" /></SelectTrigger>
                 <SelectContent>
-                  {(['Zone A', 'Zone B', 'Zone C'] as const).map((z) => (
-                    <SelectItem key={z} value={z}>{z}</SelectItem>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {form2.formState.errors.location_id && (
+                <p className="text-sm text-reru-danger">{form2.formState.errors.location_id.message}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">

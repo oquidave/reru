@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,11 +12,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { Client } from '@/types'
+import type { Client, ServiceLocation } from '@/types'
 
 const schema = z.object({
   address:        z.string().min(1, 'Address is required').max(500),
-  zone:           z.enum(['Zone A', 'Zone B', 'Zone C']),
+  location_id:    z.string().uuid('Select a location'),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
   plan:           z.enum(['monthly', 'annual']),
 })
@@ -31,16 +31,28 @@ export function AdminEditClientDialog({ client }: AdminEditClientDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [locations, setLocations] = useState<ServiceLocation[]>([])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      address:        client.address,
-      zone:           client.zone,
-      collection_day: client.collection_day,
-      plan:           client.plan,
+      address:        client.address ?? '',
+      location_id:    client.location_id ?? undefined,
+      collection_day: client.collection_day ?? 'Monday',
+      plan:           client.plan ?? 'monthly',
     },
   })
+
+  useEffect(() => {
+    if (open && locations.length === 0) {
+      fetch('/api/admin/locations')
+        .then((r) => r.json())
+        .then((json: { ok: boolean; data?: ServiceLocation[] }) => {
+          if (json.ok && json.data) setLocations(json.data.filter((l) => l.active))
+        })
+        .catch(() => {})
+    }
+  }, [open, locations.length])
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -86,19 +98,22 @@ export function AdminEditClientDialog({ client }: AdminEditClientDialogProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Zone</Label>
+            <Label>Location</Label>
             <Select
-              defaultValue={client.zone}
-              onValueChange={(v) => form.setValue('zone', v as FormValues['zone'])}
+              defaultValue={client.location_id ?? undefined}
+              onValueChange={(v) => form.setValue('location_id', v)}
               disabled={loading}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Select a location" /></SelectTrigger>
               <SelectContent>
-                {(['Zone A', 'Zone B', 'Zone C'] as const).map((z) => (
-                  <SelectItem key={z} value={z}>{z}</SelectItem>
+                {locations.map((loc) => (
+                  <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {form.formState.errors.location_id && (
+              <p className="text-sm text-reru-danger">{form.formState.errors.location_id.message}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">

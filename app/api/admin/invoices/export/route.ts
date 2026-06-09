@@ -42,12 +42,12 @@ export async function GET(req: Request) {
     paid_at: string | null
     payment_method: string | null
     payment_ref: string | null
-    reru_clients: { name: string; zone: string; phone: string } | null
+    reru_clients: { name: string; service_locations: { name: string } | null; phone: string } | null
   }
 
   let query = adminUser.supabase
     .from('reru_invoices')
-    .select('id, date, plan, qty, unit_price, subtotal, tax, total, status, paid_at, payment_method, payment_ref, reru_clients(name, zone, phone)')
+    .select('id, date, plan, qty, unit_price, subtotal, tax, total, status, paid_at, payment_method, payment_ref, reru_clients(name, phone, service_locations(name))')
     .order('date', { ascending: false })
 
   if (parsed.data.status) {
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
   }
 
   const headers = [
-    'Invoice ID', 'Client Name', 'Zone', 'Phone',
+    'Invoice ID', 'Client Name', 'Location', 'Phone',
     'Date', 'Plan', 'Qty', 'Unit Price', 'Subtotal', 'Tax', 'Total',
     'Status', 'Paid At', 'Payment Method', 'Payment Ref',
   ]
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
   const rows = (invoices as unknown as InvoiceRow[]).map((inv) => [
     inv.id,
     inv.reru_clients?.name ?? '',
-    inv.reru_clients?.zone ?? '',
+    inv.reru_clients?.service_locations?.name ?? '',
     inv.reru_clients?.phone ?? '',
     formatDate(inv.date),
     inv.plan,

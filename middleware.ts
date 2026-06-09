@@ -55,78 +55,59 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  console.log('[MW]', request.nextUrl.pathname, '| user:', user?.email ?? 'none')
+  const path = request.nextUrl.pathname
+  const isDashboard = path.startsWith('/dashboard')
+  const isAdminRoute = path.startsWith('/dashboard/admin')
+  const isOnboarding = path.startsWith('/onboarding')
+  const isAuthRoute = path.startsWith('/auth')
 
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      console.log('[MW] no user → /auth/login')
+  // Unauthenticated: protect app areas, leave public pages alone.
+  if (!user) {
+    if (isDashboard || isOnboarding) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
     }
-
-    // Admin route guard — verify role from profiles table
-    if (request.nextUrl.pathname.startsWith('/dashboard/admin')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
-
-      console.log('[MW] admin route, profile role:', profile?.role ?? 'null')
-
-      if (!profile || !['admin', 'superadmin'].includes(profile.role as string)) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-    } else {
-      // Redirect admin-only users away from the user dashboard before any layout runs
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
-        const { data: client } = await supabase
-          .from('reru_clients')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle()
-
-        if (!client) {
-          console.log('[MW] admin-only user on user dashboard → /dashboard/admin')
-          return NextResponse.redirect(new URL('/dashboard/admin', request.url))
-        }
-      }
-    }
+    return applySecurityHeaders(response)
   }
 
-  if (request.nextUrl.pathname.startsWith('/auth')) {
-    if (user) {
-      // Check if this is an admin-only user and send them to the right place
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single()
+  // Only resolve role/onboarding state on routes where it changes behavior.
+  if (isDashboard || isOnboarding || isAuthRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
+    const role = (profile?.role as string) ?? 'client'
+    const isAdmin = role === 'admin' || role === 'superadmin'
 
-      console.log('[MW] auth route logged-in user, profile role:', profile?.role ?? 'null')
-
-      if (profile && ['admin', 'superadmin'].includes(profile.role as string)) {
-        // Confirm they have no client record before redirecting to admin
-        const { data: client } = await supabase
-          .from('reru_clients')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle()
-
-        console.log('[MW] admin user, client record:', client ? 'exists' : 'none')
-
-        if (!client) {
-          console.log('[MW] admin-only user → /dashboard/admin')
-          return NextResponse.redirect(new URL('/dashboard/admin', request.url))
-        }
+    // Admin-only users (no client record by project rule) live in /dashboard/admin.
+    if (isAdmin) {
+      if (!isAdminRoute) {
+        return NextResponse.redirect(new URL('/dashboard/admin', request.url))
       }
+      return applySecurityHeaders(response)
+    }
 
-      console.log('[MW] logged-in user on /auth → /dashboard')
+    // Client users.
+    const { data: client } = await supabase
+      .from('reru_clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const hasClient = Boolean(client)
+
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    // Force profile completion before using the dashboard.
+    if (isDashboard && !hasClient) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
+    // Onboarded clients shouldn't see onboarding again.
+    if (isOnboarding && hasClient) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+    // Logged-in clients don't need the auth pages.
+    if (isAuthRoute) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }

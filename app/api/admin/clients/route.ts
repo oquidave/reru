@@ -9,7 +9,7 @@ const addClientSchema = z.object({
   email:          z.string().email('Invalid email address'),
   phone:          z.string().min(10, 'Phone must be at least 10 characters'),
   address:        z.string().min(5, 'Address must be at least 5 characters'),
-  zone:           z.enum(['Zone A', 'Zone B', 'Zone C']),
+  location_id:    z.string().uuid('Select a location'),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
   plan:           z.enum(['monthly', 'annual']),
 })
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: message }, { status: 400 })
     }
 
-    const { name, email, phone, address, zone, collection_day, plan } = parsed.data
+    const { name, email, phone, address, location_id, collection_day, plan } = parsed.data
     const supabase = await createSupabaseServerClientWithServiceRole()
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     const { data: clientRow, error: clientError } = await supabase
       .from('reru_clients')
-      .insert({ user_id: userId, name, phone, address, zone, collection_day, plan, status: 'active' })
+      .insert({ user_id: userId, name, phone, address, location_id, collection_day, plan, status: 'active' })
       .select()
       .single()
 
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
   const { data: clients, error } = await adminUser.supabase
     .from('reru_clients')
-    .select('id, name, zone')
+    .select('id, name, location_id, service_locations(name)')
     .eq('status', 'active')
     .order('name')
 
@@ -92,5 +92,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: 'Failed to fetch clients' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, data: clients })
+  const data = (clients ?? []).map((c) => {
+    const { service_locations, ...rest } = c as typeof c & { service_locations: { name: string } | null }
+    return { ...rest, location: service_locations?.name ?? null }
+  })
+
+  return NextResponse.json({ ok: true, data })
 }

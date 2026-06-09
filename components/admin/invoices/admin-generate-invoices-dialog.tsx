@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type TargetType = 'all' | 'specific'
-type ClientOption = { id: string; name: string; zone: string }
+type ClientOption = { id: string; name: string; location: string | null }
 
 export function AdminGenerateInvoicesDialog() {
   const router = useRouter()
@@ -117,7 +117,7 @@ export function AdminGenerateInvoicesDialog() {
                       className="rounded border-reru-border text-green-700 focus:ring-green-600"
                     />
                     <span className="text-sm text-reru-text-primary">{c.name}</span>
-                    <span className="text-xs text-reru-text-muted ml-auto">{c.zone}</span>
+                    <span className="text-xs text-reru-text-muted ml-auto">{c.location ?? '—'}</span>
                   </label>
                 ))}
               </div>

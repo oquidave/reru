@@ -15,10 +15,10 @@ const PRICING = {
 }
 
 const listInvoicesSchema = z.object({
-  status: z.enum(['pending', 'paid', 'overdue']).optional(),
-  zone:   z.enum(['Zone A', 'Zone B', 'Zone C']).optional(),
-  limit:  z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
+  status:      z.enum(['pending', 'paid', 'overdue']).optional(),
+  location_id: z.string().uuid().optional(),
+  limit:       z.coerce.number().int().min(1).max(100).default(50),
+  offset:      z.coerce.number().int().min(0).default(0),
 })
 
 type InvoiceWithClient = {
@@ -35,7 +35,7 @@ type InvoiceWithClient = {
   paid_at: string | null
   payment_method: string | null
   payment_ref: string | null
-  reru_clients: { name: string; zone: string; phone: string } | null
+  reru_clients: { name: string; location: string | null; phone: string } | null
 }
 
 type InvoicesData = { data: InvoiceWithClient[]; total: number }
@@ -55,16 +55,16 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<In
     )
   }
 
-  const { status, zone, limit, offset } = parsed.data
+  const { status, location_id, limit, offset } = parsed.data
 
   let query = adminUser.supabase
     .from('reru_invoices')
-    .select('id, client_id, date, plan, qty, unit_price, subtotal, tax, total, status, paid_at, payment_method, payment_ref, reru_clients(name, zone, phone)', { count: 'exact' })
+    .select('id, client_id, date, plan, qty, unit_price, subtotal, tax, total, status, paid_at, payment_method, payment_ref, reru_clients(name, phone, service_locations(name))', { count: 'exact' })
     .order('date', { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (status) query = query.eq('status', status)
-  if (zone)   query = query.eq('reru_clients.zone', zone)
+  if (status)      query = query.eq('status', status)
+  if (location_id) query = query.eq('reru_clients.location_id', location_id)
 
   const { data, count, error } = await query
 
@@ -73,9 +73,19 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<In
     return NextResponse.json({ ok: false, error: 'Failed to fetch invoices' }, { status: 500 })
   }
 
+  type Row = Omit<InvoiceWithClient, 'reru_clients'> & {
+    reru_clients: { name: string; phone: string; service_locations: { name: string } | null } | null
+  }
+  const rows = ((data ?? []) as unknown as Row[]).map((r) => ({
+    ...r,
+    reru_clients: r.reru_clients
+      ? { name: r.reru_clients.name, phone: r.reru_clients.phone, location: r.reru_clients.service_locations?.name ?? null }
+      : null,
+  }))
+
   return NextResponse.json({
     ok: true,
-    data: { data: (data ?? []) as unknown as InvoiceWithClient[], total: count ?? 0 },
+    data: { data: rows, total: count ?? 0 },
   })
 }
 

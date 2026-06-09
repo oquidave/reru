@@ -5,6 +5,8 @@
 
 All endpoints return JSON. All request bodies must be `Content-Type: application/json`.
 
+> **BREAKING (this version):** Authentication is now **phone-OTP-first** — new clients register with phone + SMS OTP via the Supabase JS SDK (email/password is an optional secondary login). The old `POST /api/auth/register` endpoint has been removed. The **`zone`** concept has been replaced everywhere by **`location`** (free-form, admin-managed service locations).
+
 ---
 
 ## Authentication
@@ -47,7 +49,7 @@ Every endpoint returns one of two shapes:
 | `400` | Bad request — invalid or missing input |
 | `401` | Unauthorized — missing or invalid token/session |
 | `404` | Resource not found |
-| `409` | Conflict — e.g. email already registered |
+| `409` | Conflict — e.g. already onboarded, or duplicate resource |
 | `500` | Internal server error |
 
 ---
@@ -56,15 +58,23 @@ Every endpoint returns one of two shapes:
 
 ### `POST /api/auth/login`
 
-Sign in with email and password. Returns a session with tokens.
+Sign in with a password, using **either** phone **or** email as the identifier. Returns a session with tokens. This is the password-based (secondary) login — phone OTP is the primary path (see [Registration & OTP login](#registration--otp-login) below).
 
-**Request body**
+**Request body** (provide `phone` or `email`, plus `password`)
+```json
+{
+  "phone": "+256701234567",
+  "password": "secret"
+}
+```
 ```json
 {
   "email": "user@example.com",
   "password": "secret"
 }
 ```
+
+Phone numbers are E.164 normalized (`+2567XXXXXXXX`) and are the unique identity.
 
 **Response `200`**
 ```json
@@ -73,6 +83,7 @@ Sign in with email and password. Returns a session with tokens.
   "data": {
     "user": {
       "id": "uuid",
+      "phone": "+256701234567",
       "email": "user@example.com"
     },
     "session": {
@@ -85,7 +96,7 @@ Sign in with email and password. Returns a session with tokens.
 ```
 
 **Errors**
-- `401` — Invalid email or password
+- `401` — Invalid credentials
 
 ---
 
@@ -137,49 +148,77 @@ Sends a password reset email. Always returns `ok: true` regardless of whether th
 
 ---
 
-### `POST /api/auth/register`
+### Registration & OTP login
 
-Self-registration for new clients (web only — admin-created clients use `POST /api/admin/clients`).
+There is **no custom REST registration endpoint** — `POST /api/auth/register` has been **removed**. Registration and the primary login path are handled **client-side via the Supabase JS SDK** using phone + SMS OTP. Supabase delivers the OTP through the Send-SMS hook (see [`POST /api/auth/sms-hook`](#post-apiauthsms-hook)).
 
-**Request body**
-```json
-{
-  "name": "Jane Mukasa",
-  "email": "jane@example.com",
-  "phone": "0701234567",
-  "address": "Plot 14, Nsasa Estate, Mukono",
-  "zone": "Zone A",
-  "collection_day": "Monday",
-  "plan": "monthly",
-  "password": "secret123"
-}
-```
+**Web registration flow**
 
-| Field | Type | Constraints |
-|---|---|---|
-| `name` | string | 2–200 chars |
-| `email` | string | valid email |
-| `phone` | string | 10–20 chars |
-| `address` | string | 5–500 chars |
-| `zone` | string | `Zone A` \| `Zone B` \| `Zone C` |
-| `collection_day` | string | `Monday` \| `Tuesday` \| `Wednesday` \| `Thursday` \| `Friday` |
-| `plan` | string | `monthly` \| `annual` |
-| `password` | string | 6–100 chars |
+1. Collect Full Name + phone.
+2. `supabase.auth.signInWithOtp({ phone, options: { data: { full_name }, shouldCreateUser: true } })` — Supabase sends a 6-digit OTP via the Send-SMS hook.
+3. User enters the code → `supabase.auth.verifyOtp({ phone, token, type: 'sms' })` → session created.
+4. User is routed to `/onboarding` to complete their profile via [`POST /api/user/onboarding`](#post-apiuseronboarding).
 
-**Response `200`**
-```json
-{ "ok": true, "data": { "message": "Account created" } }
-```
+**Login methods**
 
-**Errors**
-- `400` — Validation error
-- `409` — Email already registered
+- **Password (secondary):** `supabase.auth.signInWithPassword({ phone | email, password })`, or the REST [`POST /api/auth/login`](#post-apiauthlogin). Preferred when a password is set, since SMS costs money.
+- **OTP (primary):** `supabase.auth.signInWithOtp({ phone })` then `supabase.auth.verifyOtp({ phone, token, type: 'sms' })`.
+
+Phone numbers are E.164 normalized (`+2567XXXXXXXX`); phone is the unique identity.
+
+**Mobile / USSD clients** should either use Supabase phone OTP (`signInWithOtp` / `verifyOtp`) directly, or continue to use [`POST /api/auth/login`](#post-apiauthlogin) with email/password (still supported). After a fresh OTP signup, call [`POST /api/user/onboarding`](#post-apiuseronboarding) to create the client record.
 
 ---
 
 ## User Endpoints
 
 All `/api/user/*` endpoints require authentication (cookie or Bearer token). The authenticated user only ever sees their own data.
+
+---
+
+### `POST /api/user/onboarding`
+
+Completes a newly-signed-up user's profile by creating their `reru_clients` row. Called once after OTP signup (the user is authenticated but has no client record yet). Optionally sets a secondary email/password login.
+
+**Request body**
+```json
+{
+  "location_id": "uuid",
+  "plan": "monthly",
+  "collection_day": "Monday",
+  "address": "Plot 14, Nsasa Estate, Mukono",
+  "landmark": "Near the blue gate",
+  "property_type": "household",
+  "bin_count": 1,
+  "alt_phone": "0701234567",
+  "alt_phone_is_whatsapp": false,
+  "email": "jane@example.com",
+  "password": "secret123"
+}
+```
+
+| Field | Type | Constraints |
+|---|---|---|
+| `location_id` | string | UUID of an active service location |
+| `plan` | string | `monthly` \| `annual` |
+| `collection_day` | string | `Monday` \| `Tuesday` \| `Wednesday` \| `Thursday` \| `Friday` |
+| `address` | string | service address |
+| `landmark` | string | optional |
+| `property_type` | string | `household` \| `business` |
+| `bin_count` | number | number of bins |
+| `alt_phone` | string | optional — Ugandan phone |
+| `alt_phone_is_whatsapp` | boolean | whether `alt_phone` is on WhatsApp |
+| `email` | string | optional — sets secondary login + invoicing email |
+| `password` | string | optional — sets a password for secondary login |
+
+**Response `200`**
+```json
+{ "ok": true, "data": { "message": "Profile completed" } }
+```
+
+**Errors**
+- `400` — Validation error
+- `409` — Already onboarded (client record exists)
 
 ---
 
@@ -196,9 +235,15 @@ Returns the authenticated client's full record plus their role.
       "id": "uuid",
       "user_id": "uuid",
       "name": "Jane Mukasa",
-      "phone": "0701234567",
+      "phone": "+256701234567",
       "address": "Plot 14, Nsasa Estate, Mukono",
-      "zone": "Zone A",
+      "location_id": "uuid",
+      "location": "Kira",
+      "landmark": "Near the blue gate",
+      "property_type": "household",
+      "bin_count": 1,
+      "alt_phone": "0759876543",
+      "alt_phone_is_whatsapp": true,
       "collection_day": "Monday",
       "plan": "monthly",
       "status": "active",
@@ -398,7 +443,7 @@ Aggregated dashboard stats: client counts, invoice counts, today's collection pr
         "date": "2026-03-01",
         "total": 26500,
         "client_name": "Jane Mukasa",
-        "client_zone": "Zone A"
+        "client_location": "Kira"
       }
     ]
   }
@@ -407,9 +452,65 @@ Aggregated dashboard stats: client counts, invoice counts, today's collection pr
 
 ---
 
+### Service Locations
+
+Service locations replace the old fixed `Zone A/B/C` concept. They are free-form, admin-managed, and referenced by clients via `location_id`.
+
+#### `GET /api/admin/locations`
+
+List all service locations, including inactive ones.
+
+**Response `200`**
+```json
+{
+  "ok": true,
+  "data": [
+    { "id": "uuid", "name": "Kira", "active": true, "created_at": "2026-01-10T08:00:00Z" }
+  ]
+}
+```
+
+#### `POST /api/admin/locations`
+
+Create a new service location.
+
+**Request body**
+```json
+{ "name": "Namugongo" }
+```
+
+**Response `200`**
+```json
+{ "ok": true, "data": { "id": "uuid", "name": "Namugongo", "active": true, "created_at": "2026-06-09T08:00:00Z" } }
+```
+
+**Errors**
+- `409` — A location with that name already exists
+
+#### `PATCH /api/admin/locations/:id`
+
+Rename a location and/or enable/disable it. Send only the fields you want to change.
+
+**Request body** (all fields optional)
+```json
+{ "name": "Nsasa", "active": false }
+```
+
+| Field | Type | Constraints |
+|---|---|---|
+| `name` | string | optional — new name |
+| `active` | boolean | optional — enable/disable |
+
+**Response `200`**
+```json
+{ "ok": true, "data": { ...ServiceLocation } }
+```
+
+---
+
 ### `GET /api/admin/clients`
 
-List all active clients (id, name, zone).
+List all active clients (id, name, location).
 
 > **Note:** Currently returns only `status = active` clients. Suspended clients are not included — this will be updated to support `?status` filtering.
 
@@ -418,7 +519,7 @@ List all active clients (id, name, zone).
 {
   "ok": true,
   "data": [
-    { "id": "uuid", "name": "Jane Mukasa", "zone": "Zone A" }
+    { "id": "uuid", "name": "Jane Mukasa", "location": "Kira" }
   ]
 }
 ```
@@ -436,7 +537,7 @@ Admin-create a new client account. Sets a random initial password and sends a pa
   "email": "jane@example.com",
   "phone": "0701234567",
   "address": "Plot 14, Nsasa Estate, Mukono",
-  "zone": "Zone A",
+  "location_id": "uuid",
   "collection_day": "Monday",
   "plan": "monthly"
 }
@@ -474,7 +575,7 @@ Update editable fields on a client. Send only the fields you want to change.
 ```json
 {
   "address": "New address",
-  "zone": "Zone B",
+  "location_id": "uuid",
   "collection_day": "Wednesday",
   "plan": "annual"
 }
@@ -527,7 +628,7 @@ All collections across all clients, with client details joined.
 |---|---|---|---|
 | `date` | string | — | Filter by date: `YYYY-MM-DD` |
 | `status` | string | — | `scheduled` \| `completed` \| `missed` |
-| `zone` | string | — | `Zone A` \| `Zone B` \| `Zone C` |
+| `location_id` | string | — | UUID of a service location |
 | `limit` | number | `50` | 1–100 |
 | `offset` | number | `0` | Pagination offset |
 
@@ -547,7 +648,7 @@ All collections across all clients, with client details joined.
         "completed_at": null,
         "reru_clients": {
           "name": "Jane Mukasa",
-          "zone": "Zone A",
+          "location": "Kira",
           "address": "Plot 14, Nsasa Estate, Mukono"
         }
       }
@@ -616,7 +717,7 @@ Today's collection schedule with client details. Equivalent to `GET /api/admin/c
 | Param | Type | Default | Description |
 |---|---|---|---|
 | `date` | string | today | `YYYY-MM-DD` |
-| `zone` | string | — | `Zone A` \| `Zone B` \| `Zone C` |
+| `location_id` | string | — | UUID of a service location |
 
 **Response `200`**
 ```json
@@ -639,7 +740,7 @@ Today's collection schedule with client details. Equivalent to `GET /api/admin/c
         "completed_at": "2026-04-25T09:14:00Z",
         "reru_clients": {
           "name": "Jane Mukasa",
-          "zone": "Zone A",
+          "location": "Kira",
           "address": "Plot 14, Nsasa Estate, Mukono",
           "phone": "0701234567"
         }
@@ -660,7 +761,7 @@ Invoice list across all clients, with client details joined.
 | Param | Type | Default | Description |
 |---|---|---|---|
 | `status` | string | — | `pending` \| `paid` \| `overdue` |
-| `zone` | string | — | `Zone A` \| `Zone B` \| `Zone C` |
+| `location_id` | string | — | UUID of a service location |
 | `limit` | number | `50` | 1–100 |
 | `offset` | number | `0` | Pagination offset |
 
@@ -686,7 +787,7 @@ Invoice list across all clients, with client details joined.
         "payment_ref": null,
         "reru_clients": {
           "name": "Jane Mukasa",
-          "zone": "Zone A",
+          "location": "Kira",
           "phone": "0701234567"
         }
       }
@@ -788,7 +889,7 @@ Download all invoices as a CSV file.
 
 **Response** — `Content-Type: text/csv`, file download
 
-CSV columns: `Invoice ID, Client Name, Zone, Phone, Date, Plan, Qty, Unit Price, Subtotal, Tax, Total, Status, Paid At, Payment Method, Payment Ref`
+CSV columns: `Invoice ID, Client Name, Location, Phone, Date, Plan, Qty, Unit Price, Subtotal, Tax, Total, Status, Paid At, Payment Method, Payment Ref`
 
 ---
 
@@ -796,17 +897,31 @@ CSV columns: `Invoice ID, Client Name, Zone, Phone, Date, Plan, Qty, Unit Price,
 
 ### Client
 ```
-id             string   UUID
-user_id        string   UUID — links to auth user
-name           string
-phone          string
-address        string
-zone           string   "Zone A" | "Zone B" | "Zone C"
-collection_day string   "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday"
-plan           string   "monthly" | "annual"
-status         string   "active" | "suspended" | "cancelled"
-paid_through   string?  YYYY-MM-DD — date of last settled invoice
-created_at     string   ISO 8601
+id                    string   UUID
+user_id               string   UUID — links to auth user
+name                  string
+phone                 string   E.164 (+2567XXXXXXXX) — unique identity
+address               string?  filled at onboarding
+location_id           string?  UUID — FK to ServiceLocation
+location              string?  joined location name (e.g. "Kira")
+landmark              string?
+property_type         string?  "household" | "business"
+bin_count             number?
+alt_phone             string?
+alt_phone_is_whatsapp boolean
+collection_day        string?  "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" — filled at onboarding
+plan                  string?  "monthly" | "annual" — filled at onboarding
+status                string   "active" | "suspended" | "cancelled"
+paid_through          string?  YYYY-MM-DD — date of last settled invoice
+created_at            string   ISO 8601
+```
+
+### ServiceLocation
+```
+id          string   UUID
+name        string   e.g. "Kira", "Nsasa", "Namugongo"
+active      boolean  inactive locations are hidden from client onboarding
+created_at  string   ISO 8601
 ```
 
 ### Invoice
@@ -863,6 +978,27 @@ processed_at  string?  ISO 8601 — set when terminal
 
 ## Webhooks
 
+### `POST /api/auth/sms-hook`
+
+Supabase Auth **Send-SMS hook**. Called server-to-server by Supabase (never by clients) to deliver OTP codes via Africa's Talking. Each request is verified with a Standard Webhooks signature derived from `SUPABASE_SEND_SMS_HOOK_SECRET`; requests that fail verification are rejected.
+
+**Payload** (sent by Supabase)
+```json
+{
+  "user": { "phone": "+256701234567" },
+  "sms": { "otp": "123456" }
+}
+```
+
+**Response `200`**
+```json
+{}
+```
+
+Configure this URL as the Send-SMS hook in the Supabase Auth dashboard and set the matching `SUPABASE_SEND_SMS_HOOK_SECRET` in the server environment.
+
+---
+
 ### `POST /api/webhooks/iotec/collection`
 
 ioTec calls this when a collection reaches a terminal status. ioTec attaches a shared secret as
@@ -879,9 +1015,9 @@ Configure this URL — plus the Security Header (`Authorization`) and its value
 
 ## Known Gaps (planned)
 
-- Rate limiting on `/api/auth/login`, `/api/auth/register`, and `/api/user/invoices/:id/pay` — required before production
+- Rate limiting / abuse protection on `/api/auth/login`, `/api/auth/sms-hook` (OTP abuse), and `/api/user/invoices/:id/pay` — required before production
 - `GET /api/admin/clients?status=suspended` — suspended clients not yet queryable via API
 - `GET /api/admin/collections/:id` and `GET /api/admin/invoices/:id` — single-item admin detail endpoints
 - `POST /api/user/device-token` — push notification token registration (v2)
-- SMS notification triggers via Africa's Talking (v2)
+- SMS via Africa's Talking is **implemented** for auth OTP delivery; SMS reminder/notification triggers (collection reminders, payment nudges) are still planned (v2)
 - Disbursements / payouts via ioTec — not implemented (collections only)

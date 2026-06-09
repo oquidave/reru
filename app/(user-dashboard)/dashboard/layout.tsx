@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: client, error: clientError } = await supabase
     .from('reru_clients')
-    .select('*')
+    .select('*, service_locations(name)')
     .eq('user_id', user.id)
     .single()
 
@@ -35,11 +35,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect('/auth/login')
   }
 
+  const { service_locations, ...clientRest } = client as typeof client & { service_locations: { name: string } | null }
+  const clientData = { ...clientRest, location: service_locations?.name ?? null } as unknown as Client
+
   return (
     <div className="flex min-h-screen bg-reru-bg">
-      <AppSidebar client={client as Client} />
+      <AppSidebar client={clientData} />
       <div className="flex-1 flex flex-col min-w-0">
-        <MobileNav client={client as Client} />
+        <MobileNav client={clientData} />
         <main className="flex-1 pt-14 md:pt-0">
           <div className="max-w-[900px] mx-auto px-4 md:px-8 py-8">
             {children}

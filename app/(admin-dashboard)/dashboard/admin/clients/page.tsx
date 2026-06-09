@@ -5,47 +5,62 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminClientFilters } from '@/components/admin/clients/admin-client-filters'
 import { AdminClientsTable } from '@/components/admin/clients/admin-clients-table'
 import { AdminAddClientDialog } from '@/components/admin/clients/admin-add-client-dialog'
-import type { Client, Zone, Plan, ClientStatus } from '@/types'
+import type { Client, Plan, ClientStatus, ServiceLocation } from '@/types'
 
 export const metadata = { title: 'Clients — RERU Admin' }
 
 interface PageProps {
-  searchParams: Promise<{ q?: string; zone?: string; plan?: string; status?: string }>
+  searchParams: Promise<{ q?: string; location_id?: string; plan?: string; status?: string }>
 }
 
 export default async function AdminClientsPage({ searchParams }: PageProps) {
   const adminUser = await getAdminUser()
   if (!adminUser) redirect('/dashboard')
 
-  const { q, zone, plan, status } = await searchParams
+  const { q, location_id, plan, status } = await searchParams
   const supabase = await createSupabaseServerClient()
 
   type ClientRow = {
-    id: string; user_id: string; name: string; phone: string; address: string
-    zone: string; collection_day: string; plan: string; status: string
+    id: string; user_id: string; name: string; phone: string; address: string | null
+    location_id: string | null; collection_day: string | null; plan: string | null; status: string
     paid_through: string | null; created_at: string
+    landmark: string | null; property_type: string | null; bin_count: number | null
+    alt_phone: string | null; alt_phone_is_whatsapp: boolean
+    service_locations: { name: string } | null
   }
 
   let query = supabase
     .from('reru_clients')
-    .select('*')
+    .select('*, service_locations(name)')
     .order('created_at', { ascending: false })
 
-  if (q)      query = (query as typeof query).ilike('name', `%${q}%`)
-  if (zone)   query = (query as typeof query).eq('zone', zone)
-  if (plan)   query = (query as typeof query).eq('plan', plan)
-  if (status) query = (query as typeof query).eq('status', status)
+  if (q)           query = (query as typeof query).ilike('name', `%${q}%`)
+  if (location_id) query = (query as typeof query).eq('location_id', location_id)
+  if (plan)        query = (query as typeof query).eq('plan', plan)
+  if (status)      query = (query as typeof query).eq('status', status)
 
   const { data: clients } = await query
 
+  // Active locations power the filter dropdown.
+  const { data: locationRows } = await supabase
+    .from('service_locations')
+    .select('id, name, active, created_at')
+    .eq('active', true)
+    .order('name')
+  const locations = (locationRows ?? []) as ServiceLocation[]
+
   const typed = (clients ?? []) as ClientRow[]
-  const typedClients: Client[] = typed.map((c) => ({
-    ...c,
-    zone:           c.zone as Zone,
-    collection_day: c.collection_day as Client['collection_day'],
-    plan:           c.plan as Plan,
-    status:         c.status as ClientStatus,
-  }))
+  const typedClients: Client[] = typed.map((c) => {
+    const { service_locations, ...rest } = c
+    return {
+      ...rest,
+      location:       service_locations?.name ?? null,
+      collection_day: rest.collection_day as Client['collection_day'],
+      plan:           rest.plan as Plan | null,
+      status:         rest.status as ClientStatus,
+      property_type:  rest.property_type as Client['property_type'],
+    }
+  })
 
   return (
     <div>
@@ -58,7 +73,7 @@ export default async function AdminClientsPage({ searchParams }: PageProps) {
       </div>
 
       <Suspense>
-        <AdminClientFilters />
+        <AdminClientFilters locations={locations} />
       </Suspense>
 
       <AdminClientsTable clients={typedClients} />

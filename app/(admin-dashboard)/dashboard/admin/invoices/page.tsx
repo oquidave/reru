@@ -29,11 +29,11 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps) {
   const { status } = await searchParams
   const supabase = await createSupabaseServerClient()
 
-  type InvoiceWithClient = Invoice & { reru_clients: { id: string; name: string; zone: string } | null }
+  type InvoiceWithClient = Invoice & { reru_clients: { id: string; name: string } | null }
 
   let query = supabase
     .from('reru_invoices')
-    .select('*, reru_clients(id, name, zone)')
+    .select('*, reru_clients(id, name)')
     .order('date', { ascending: false })
 
   if (status && ['pending', 'paid', 'overdue'].includes(status)) {

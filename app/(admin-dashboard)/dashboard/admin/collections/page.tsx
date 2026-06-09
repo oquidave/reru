@@ -6,11 +6,9 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminDatePicker } from '@/components/admin/collections/admin-date-picker'
 import { AdminCollectionRow } from '@/components/admin/collections/admin-collection-row'
 import { AdminBulkScheduleButton } from '@/components/admin/collections/admin-bulk-schedule-button'
-import type { Zone } from '@/types'
+import type { ServiceLocation } from '@/types'
 
 export const metadata = { title: 'Collections — RERU Admin' }
-
-const ZONES: Zone[] = ['Zone A', 'Zone B', 'Zone C']
 
 interface PageProps {
   searchParams: Promise<{ date?: string }>
@@ -30,26 +28,33 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
     id: string
     status: string
     notes: string | null
-    reru_clients: { id: string; name: string; address: string; phone: string; zone: string } | null
+    reru_clients: { id: string; name: string; address: string; phone: string; service_locations: { name: string } | null } | null
   }
 
-  const { data: rows } = await supabase
-    .from('reru_collections')
-    .select('id, status, notes, reru_clients(id, name, address, phone, zone)')
-    .eq('scheduled_date', selectedDate)
-    .order('status')
+  const [{ data: rows }, { data: locationRows }] = await Promise.all([
+    supabase
+      .from('reru_collections')
+      .select('id, status, notes, reru_clients(id, name, address, phone, service_locations(name))')
+      .eq('scheduled_date', selectedDate)
+      .order('status'),
+    supabase.from('service_locations').select('name').eq('active', true).order('name'),
+  ])
 
   const collections = (rows ?? []) as unknown as CollectionWithClient[]
+  const locationNames = ((locationRows ?? []) as Pick<ServiceLocation, 'name'>[]).map((l) => l.name)
 
   const total     = collections.length
   const completed = collections.filter((c) => c.status === 'completed').length
   const missed    = collections.filter((c) => c.status === 'missed').length
   const scheduled = collections.filter((c) => c.status === 'scheduled').length
 
-  const byZone = ZONES.map((zone) => ({
-    zone,
+  // Group collections by location; include any locations that have collections plus an
+  // "Unassigned" bucket for clients without a location set.
+  const groupNames = [...locationNames, 'Unassigned']
+  const byLocation = groupNames.map((location) => ({
+    location,
     items: collections
-      .filter((c) => c.reru_clients?.zone === zone)
+      .filter((c) => (c.reru_clients?.service_locations?.name ?? 'Unassigned') === location)
       .map((c) => ({
         id:             c.id,
         status:         c.status,
@@ -94,11 +99,11 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
         </div>
       ) : (
         <div className="space-y-6">
-          {byZone.map(({ zone, items }) =>
+          {byLocation.map(({ location, items }) =>
             items.length === 0 ? null : (
-              <div key={zone} className="bg-white border border-reru-border rounded-xl shadow-card overflow-hidden">
+              <div key={location} className="bg-white border border-reru-border rounded-xl shadow-card overflow-hidden">
                 <div className="px-6 py-4 border-b border-reru-border flex items-center justify-between">
-                  <h2 className="reru-card-title text-reru-text-primary">{zone}</h2>
+                  <h2 className="reru-card-title text-reru-text-primary">{location}</h2>
                   <span className="text-sm text-reru-text-muted">{items.length} collection{items.length !== 1 ? 's' : ''}</span>
                 </div>
                 <table className="w-full">

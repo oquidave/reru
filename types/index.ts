@@ -1,22 +1,38 @@
-export type Zone = 'Zone A' | 'Zone B' | 'Zone C'
 export type CollectionDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'
 export type Plan = 'monthly' | 'annual'
 export type ClientStatus = 'active' | 'suspended' | 'cancelled'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
 export type CollectionStatus = 'scheduled' | 'completed' | 'missed'
+export type PropertyType = 'household' | 'business'
+
+/** Admin-managed service area (town/neighbourhood). Replaces the old Zone A/B/C enum. */
+export interface ServiceLocation {
+  id: string
+  name: string
+  active: boolean
+  created_at: string
+}
 
 export interface Client {
   id: string
   user_id: string
   name: string
   phone: string
-  address: string
-  zone: Zone
-  collection_day: CollectionDay
-  plan: Plan
+  address: string | null
+  location_id: string | null
+  /** Joined service_locations.name, populated by list/detail queries. */
+  location: string | null
+  collection_day: CollectionDay | null
+  plan: Plan | null
   status: ClientStatus
   paid_through: string | null
   created_at: string
+  // Profiling fields collected during onboarding.
+  landmark: string | null
+  property_type: PropertyType | null
+  bin_count: number | null
+  alt_phone: string | null
+  alt_phone_is_whatsapp: boolean
 }
 
 export interface Invoice {
@@ -85,6 +101,8 @@ export type AuditAction =
   | 'mark_collection_completed'
   | 'mark_collection_missed'
   | 'bulk_schedule_collections'
+  | 'add_location'
+  | 'edit_location'
 
 export interface Profile {
   id: string
