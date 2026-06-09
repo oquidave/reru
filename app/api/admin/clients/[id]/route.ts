@@ -5,7 +5,7 @@ import type { Client } from '@/types'
 
 const updateClientSchema = z.object({
   address:        z.string().min(1).max(500).optional(),
-  zone:           z.enum(['Zone A', 'Zone B', 'Zone C']).optional(),
+  location_id:    z.string().uuid().optional(),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']).optional(),
   plan:           z.enum(['monthly', 'annual']).optional(),
 })
@@ -23,7 +23,7 @@ export async function GET(
 
   const { data: client, error } = await adminUser.supabase
     .from('reru_clients')
-    .select('*')
+    .select('*, service_locations(name)')
     .eq('id', id)
     .single()
 
@@ -31,7 +31,8 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'Client not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ ok: true, data: client })
+  const { service_locations, ...rest } = client as typeof client & { service_locations: { name: string } | null }
+  return NextResponse.json({ ok: true, data: { ...rest, location: service_locations?.name ?? null } })
 }
 
 export async function PATCH(

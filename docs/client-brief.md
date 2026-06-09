@@ -41,7 +41,7 @@ Once registered, each client gets a private, secure account where they can:
 A management console for the operations team to run the service day-to-day:
 - **Client Management** — view, search, and manage all registered households; suspend or reactivate accounts
 - **Collection Recording** — mark daily collections as completed or missed; add notes per visit
-- **Zone Planning** — see which clients are due for collection today, grouped by zone
+- **Location Planning** — see which clients are due for collection today, grouped by location
 - **Invoice Management** — generate, send, and mark invoices as paid
 - **Overdue Tracking** — identify and follow up on late payments; flag accounts for suspension after repeated non-payment
 

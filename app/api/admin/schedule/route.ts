@@ -4,8 +4,8 @@ import { getAdminUser } from '@/lib/auth/get-admin-user'
 import type { ApiResponse } from '@/types/api'
 
 const querySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').optional(),
-  zone: z.enum(['Zone A', 'Zone B', 'Zone C']).optional(),
+  date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD').optional(),
+  location_id: z.string().uuid().optional(),
 })
 
 type ScheduleEntry = {
@@ -16,7 +16,7 @@ type ScheduleEntry = {
   bags_collected: number | null
   notes: string | null
   completed_at: string | null
-  reru_clients: { name: string; zone: string; address: string; phone: string } | null
+  reru_clients: { name: string; location: string | null; address: string; phone: string } | null
 }
 
 type ScheduleData = {
@@ -44,15 +44,15 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Sc
   }
 
   const targetDate = parsed.data.date ?? new Date().toISOString().split('T')[0]
-  const zone = parsed.data.zone
+  const locationId = parsed.data.location_id
 
   let query = adminUser.supabase
     .from('reru_collections')
-    .select('id, client_id, scheduled_date, status, bags_collected, notes, completed_at, reru_clients(name, zone, address, phone)')
+    .select('id, client_id, scheduled_date, status, bags_collected, notes, completed_at, reru_clients(name, address, phone, service_locations(name))')
     .eq('scheduled_date', targetDate)
-    .order('reru_clients(zone)', { ascending: true })
+    .order('reru_clients(name)', { ascending: true })
 
-  if (zone) query = query.eq('reru_clients.zone', zone)
+  if (locationId) query = query.eq('reru_clients.location_id', locationId)
 
   const { data, error } = await query
 
@@ -61,7 +61,20 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Sc
     return NextResponse.json({ ok: false, error: 'Failed to fetch schedule' }, { status: 500 })
   }
 
-  const entries = (data ?? []) as unknown as ScheduleEntry[]
+  type Row = Omit<ScheduleEntry, 'reru_clients'> & {
+    reru_clients: { name: string; address: string; phone: string; service_locations: { name: string } | null } | null
+  }
+  const entries: ScheduleEntry[] = ((data ?? []) as unknown as Row[]).map((r) => ({
+    ...r,
+    reru_clients: r.reru_clients
+      ? {
+          name: r.reru_clients.name,
+          address: r.reru_clients.address,
+          phone: r.reru_clients.phone,
+          location: r.reru_clients.service_locations?.name ?? null,
+        }
+      : null,
+  }))
 
   return NextResponse.json({
     ok: true,

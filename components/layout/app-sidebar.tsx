@@ -78,7 +78,7 @@ export function AppSidebar({ client }: AppSidebarProps) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">{client.name}</p>
-            <p className="text-xs text-white/50 truncate">{client.zone}</p>
+            <p className="text-xs text-white/50 truncate">{client.location}</p>
           </div>
         </div>
         <button

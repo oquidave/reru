@@ -23,7 +23,7 @@ type OverviewData = {
     date: string
     total: number
     client_name: string
-    client_zone: string
+    client_location: string
   }>
 }
 
@@ -53,7 +53,7 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Ov
       .eq('scheduled_date', today),
     adminUser.supabase
       .from('reru_invoices')
-      .select('id, date, total, reru_clients(name, zone)')
+      .select('id, date, total, reru_clients(name, service_locations(name))')
       .eq('status', 'overdue')
       .order('date', { ascending: true })
       .limit(5),
@@ -73,7 +73,7 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Ov
     id: string
     date: string
     total: number
-    reru_clients: { name: string; zone: string } | null
+    reru_clients: { name: string; service_locations: { name: string } | null } | null
   }
 
   return NextResponse.json({
@@ -95,11 +95,11 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Ov
         today_missed:    cols.filter(c => c.status === 'missed').length,
       },
       recent_overdue: (recentOverdue as unknown as OverdueRow[]).map(inv => ({
-        id:          inv.id,
-        date:        inv.date,
-        total:       inv.total,
-        client_name: inv.reru_clients?.name ?? '',
-        client_zone: inv.reru_clients?.zone ?? '',
+        id:              inv.id,
+        date:            inv.date,
+        total:           inv.total,
+        client_name:     inv.reru_clients?.name ?? '',
+        client_location: inv.reru_clients?.service_locations?.name ?? '',
       })),
     },
   })

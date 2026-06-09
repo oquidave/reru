@@ -8,6 +8,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_BASE_URL:         z.string().url().optional(),
   AFRICAS_TALKING_USERNAME:     z.string().optional(),
   AFRICAS_TALKING_API_KEY:      z.string().optional(),
+  AFRICAS_TALKING_SENDER_ID:    z.string().optional(),
+  // Supabase "Send SMS" auth hook signing secret (Standard Webhooks, "v1,whsec_…").
+  // When set, the sms-hook route rejects payloads that don't carry a valid signature.
+  SUPABASE_SEND_SMS_HOOK_SECRET: z.string().optional(),
   // ioTec Pay (mobile money). Optional so dev/build works before merchant onboarding.
   IOTEC_CLIENT_ID:              z.string().optional(),
   IOTEC_CLIENT_SECRET:          z.string().optional(),

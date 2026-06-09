@@ -36,7 +36,7 @@ Staff responsible for scheduling collections, managing client accounts, and trac
 - Need to view all client accounts and their statuses
 - Need to record completed/missed collections
 - Need to generate, send, and manage invoices
-- Need zone-level visibility of daily collection workload
+- Need location-level visibility of daily collection workload
 
 ---
 
@@ -67,7 +67,7 @@ All features below are built and deployed. The Supabase backend is live with rea
 - **Login:** Email address + password via Supabase Auth
 - **Registration (3-step wizard):**
   - Step 1: Full name, email address, and phone number
-  - Step 2: Home address, zone selection (Zone A / B / C), preferred collection day (Mon–Fri)
+  - Step 2: Home address, service location selection (admin-managed towns), preferred collection day (Mon–Fri)
   - Step 3: Plan selection (Monthly / Annual), password creation, and service agreement acceptance
 - Protected routes enforced via Next.js middleware (unauthenticated users redirected to `/login`)
 - **Mobile / USSD clients:** authenticate via `POST /api/auth/login` with `{ email, password }` — receive `access_token` and `refresh_token` in response; send `Authorization: Bearer <access_token>` on all subsequent API requests; refresh via `POST /api/auth/refresh` when the token expires (default 1 hour)
@@ -100,7 +100,7 @@ All features below are built and deployed. The Supabase backend is live with rea
 ### 4.7 App Shell
 - Sidebar navigation (Desktop): Home, Collections, Invoices, Agreement
 - Mobile-responsive sheet navigation (hamburger overlay)
-- Client user card: name, zone, initials avatar
+- Client user card: name, location, initials avatar
 - Sign-out button
 
 ---
@@ -110,13 +110,13 @@ All features below are built and deployed. The Supabase backend is live with rea
 The admin dashboard is the next feature to be built. It will be a protected section of the same Next.js app under `/dashboard/admin/*`, accessible only to users with `admin` or `superadmin` roles.
 
 ### 5.1 Client Management
-- View all registered clients with search, filter by zone, filter by plan, filter by status
+- View all registered clients with search, filter by location, filter by plan, filter by status
 - View individual client profile: contact info, plan, payment history, collection history
-- Edit client details (address, zone, collection day, plan)
+- Edit client details (address, location, collection day, plan)
 - Suspend / reactivate accounts (with reason recorded in audit log)
 
 ### 5.2 Collection Management
-- Daily view: all clients due for collection today, grouped by zone
+- Daily view: all clients due for collection today, grouped by location
 - Mark individual collections as Completed or Missed
 - Add notes to a collection record (e.g., "client unavailable", "gate locked")
 - Bulk-schedule collections for the next billing period
@@ -132,10 +132,10 @@ The admin dashboard is the next feature to be built. It will be a protected sect
 - Flag accounts with 3+ consecutive missed payments for suspension
 - Export payment report as CSV
 
-### 5.5 Zone-Level Operational View
-- Map or list of which clients are in each zone
-- Today's collection schedule grouped by zone
-- Collector assignment per zone (v2)
+### 5.5 Location-Level Operational View
+- Map or list of which clients are in each location
+- Today's collection schedule grouped by location
+- Collector assignment per location (v2)
 
 ---
 
@@ -192,7 +192,7 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 | name | string | Full name |
 | phone | string | Used as login identifier |
 | address | string | Home address |
-| zone | enum | `Zone A`, `Zone B`, `Zone C` |
+| location_id | uuid | FK → `service_locations` (admin-managed towns/areas) |
 | collection_day | enum | `Monday`–`Friday` |
 | plan | enum | `monthly`, `annual` |
 | status | enum | `active`, `suspended`, `cancelled` |
@@ -294,7 +294,7 @@ All types are defined in `types/index.ts`. IDs are UUIDs (Supabase default).
 ## 10. Geographic & Operational Scope
 
 - **Service Area:** Nsasa Estate, Mukono District, Uganda
-- **Zones:** Zone A, Zone B, Zone C (within the estate)
+- **Locations:** admin-managed service locations — towns/areas in Kira Municipality & Wakiso (e.g. Kira, Nsasa, Namugongo, Ntinda)
 - **Collection Frequency:** Weekly (client selects preferred weekday at registration)
 - **Waste Categories:** Organic (Black Soldier Fly / earthworm composting), Plastic, Glass, Paper
 - **Disposal Facilities:** Katikolo (Mukono), Buyala (Kampala)

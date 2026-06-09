@@ -30,14 +30,15 @@ export default async function AdminClientDetailPage({
   const supabase = await createSupabaseServerClient()
 
   const [{ data: clientRow }, { data: invoiceRows }, { data: collectionRows }] = await Promise.all([
-    supabase.from('reru_clients').select('*').eq('id', id).single(),
+    supabase.from('reru_clients').select('*, service_locations(name)').eq('id', id).single(),
     supabase.from('reru_invoices').select('*').eq('client_id', id).order('date', { ascending: false }),
     supabase.from('reru_collections').select('*').eq('client_id', id).order('scheduled_date', { ascending: false }),
   ])
 
   if (!clientRow) notFound()
 
-  const client   = clientRow   as Client
+  const { service_locations, ...clientRest } = clientRow as typeof clientRow & { service_locations: { name: string } | null }
+  const client = { ...clientRest, location: service_locations?.name ?? null } as unknown as Client
   const invoices = (invoiceRows   ?? []) as Invoice[]
   const collections = (collectionRows ?? []) as Collection[]
 
@@ -70,10 +71,10 @@ export default async function AdminClientDetailPage({
         <h2 className="reru-card-title text-reru-text-primary mb-4">Account details</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
           {[
-            { label: 'Address',        value: client.address },
-            { label: 'Zone',           value: client.zone },
-            { label: 'Collection day', value: client.collection_day },
-            { label: 'Plan',           value: client.plan.charAt(0).toUpperCase() + client.plan.slice(1) },
+            { label: 'Address',        value: client.address ?? '—' },
+            { label: 'Location',       value: client.location ?? '—' },
+            { label: 'Collection day', value: client.collection_day ?? '—' },
+            { label: 'Plan',           value: client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : '—' },
             { label: 'Paid through',   value: client.paid_through ? formatDate(client.paid_through) : 'Not paid' },
             { label: 'Member since',   value: formatDate(client.created_at) },
           ].map(({ label, value }) => (

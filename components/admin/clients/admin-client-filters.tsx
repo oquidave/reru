@@ -4,28 +4,28 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { ServiceLocation } from '@/types'
 
-const ZONES = ['Zone A', 'Zone B', 'Zone C']
 const PLANS = ['monthly', 'annual']
 const STATUSES = ['active', 'suspended', 'cancelled']
 
-export function AdminClientFilters() {
+export function AdminClientFilters({ locations }: { locations: ServiceLocation[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
-  const zone   = searchParams.get('zone') ?? ''
-  const plan   = searchParams.get('plan') ?? ''
-  const status = searchParams.get('status') ?? ''
+  const locationId = searchParams.get('location_id') ?? ''
+  const plan       = searchParams.get('plan') ?? ''
+  const status     = searchParams.get('status') ?? ''
 
   const buildUrl = useCallback(
     (overrides: Record<string, string>) => {
       const params = new URLSearchParams()
-      const merged = { q: search, zone, plan, status, ...overrides }
+      const merged = { q: search, location_id: locationId, plan, status, ...overrides }
       Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v) })
       return `/dashboard/admin/clients?${params.toString()}`
     },
-    [search, zone, plan, status]
+    [search, locationId, plan, status]
   )
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function AdminClientFilters() {
     return () => clearTimeout(timer)
   }, [search, buildUrl, router])
 
-  const hasFilters = !!(search || zone || plan || status)
+  const hasFilters = !!(search || locationId || plan || status)
 
   function selectStyle(active: boolean) {
     return cn(
@@ -60,14 +60,14 @@ export function AdminClientFilters() {
         />
       </div>
 
-      {/* Zone */}
+      {/* Location */}
       <select
-        value={zone}
-        onChange={(e) => router.push(buildUrl({ zone: e.target.value }))}
-        className={selectStyle(!!zone)}
+        value={locationId}
+        onChange={(e) => router.push(buildUrl({ location_id: e.target.value }))}
+        className={selectStyle(!!locationId)}
       >
-        <option value="">All zones</option>
-        {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
+        <option value="">All locations</option>
+        {locations.map((loc) => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
       </select>
 
       {/* Plan */}
