@@ -94,16 +94,9 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
 
   return (
     <div className="bg-white rounded-xl border border-reru-border shadow-card p-8">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Phone (read-only identity) */}
-        <div className="space-y-1.5">
-          <Label className="reru-label text-reru-text-secondary">Phone (sign-in number)</Label>
-          <Input value={phone} disabled className="bg-reru-bg" />
-          <p className="text-xs text-reru-text-muted">Your phone is your account ID and can&apos;t be changed here.</p>
-        </div>
-
-        {/* Location pills */}
-        <div className="space-y-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+        {/* Location pills — full width */}
+        <div className="sm:col-span-2 space-y-2">
           <Label className="reru-label text-reru-text-secondary">Location</Label>
           <div className="flex flex-wrap gap-2">
             {locations.map(loc => (
@@ -125,19 +118,77 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
           {errors.location_id && <p className="text-xs text-reru-danger">{errors.location_id.message}</p>}
         </div>
 
-        {/* Address + landmark */}
+        {/* Phone (read-only identity) */}
+        <div className="space-y-1.5">
+          <Label className="reru-label text-reru-text-secondary">Phone (sign-in number)</Label>
+          <Input value={phone} disabled className="bg-reru-bg" />
+          <p className="text-xs text-reru-text-muted">Your phone is your account ID and can&apos;t be changed here.</p>
+        </div>
+
+        {/* Collection day */}
+        <div className="space-y-1.5">
+          <Label className="reru-label text-reru-text-secondary">Preferred collection day</Label>
+          <select
+            {...register('collection_day')}
+            className="w-full h-10 rounded-md border border-reru-border bg-reru-bg px-3 text-md text-reru-text-primary focus:outline-none focus:border-green-500 focus:bg-white transition-all"
+          >
+            {DAYS.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+
+        {/* Address */}
         <div className="space-y-1.5">
           <Label className="reru-label text-reru-text-secondary">Street / house address</Label>
           <Input {...register('address')} placeholder="Plot 12, Kabaka Road" />
           {errors.address && <p className="text-xs text-reru-danger">{errors.address.message}</p>}
         </div>
+
+        {/* Landmark */}
         <div className="space-y-1.5">
           <Label className="reru-label text-reru-text-secondary">Nearest landmark (optional)</Label>
           <Input {...register('landmark')} placeholder="e.g. opposite Total petrol station" />
         </div>
 
-        {/* Plan */}
-        <div className="space-y-2">
+        {/* Property type */}
+        <div className="space-y-1.5">
+          <Label className="reru-label text-reru-text-secondary">Property type</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['household', 'business'] as const).map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setValue('property_type', t)}
+                className={cn(
+                  'h-10 rounded-md text-sm font-medium border-[1.5px] capitalize transition-all',
+                  propertyType === t ? 'border-green-700 bg-green-50 text-green-700' : 'border-reru-border bg-white text-reru-text-secondary'
+                )}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Number of bins */}
+        <div className="space-y-1.5">
+          <Label className="reru-label text-reru-text-secondary">Number of bins</Label>
+          <Input {...register('bin_count')} type="number" min={1} max={100} />
+          {errors.bin_count && <p className="text-xs text-reru-danger">{errors.bin_count.message}</p>}
+        </div>
+
+        {/* Alternate contact — full width */}
+        <div className="sm:col-span-2 space-y-1.5">
+          <Label className="reru-label text-reru-text-secondary">Alternate contact (optional)</Label>
+          <Input {...register('alt_phone')} type="tel" placeholder="07XX XXX XXX" />
+          {errors.alt_phone && <p className="text-xs text-reru-danger">{errors.alt_phone.message}</p>}
+          <label className="flex items-center gap-2 cursor-pointer pt-1">
+            <input type="checkbox" className="accent-green-700" {...register('alt_phone_is_whatsapp')} />
+            <span className="text-sm text-reru-text-secondary">This number is on WhatsApp</span>
+          </label>
+        </div>
+
+        {/* Plan — full width */}
+        <div className="sm:col-span-2 space-y-2">
           <Label className="reru-label text-reru-text-secondary">Plan</Label>
           <div className="grid grid-cols-2 gap-3">
             {PLANS.map(p => (
@@ -163,72 +214,25 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
           </div>
         </div>
 
-        {/* Collection day */}
-        <div className="space-y-1.5">
-          <Label className="reru-label text-reru-text-secondary">Preferred collection day</Label>
-          <select
-            {...register('collection_day')}
-            className="w-full h-10 rounded-md border border-reru-border bg-reru-bg px-3 text-md text-reru-text-primary focus:outline-none focus:border-green-500 focus:bg-white transition-all"
-          >
-            {DAYS.map(d => <option key={d}>{d}</option>)}
-          </select>
-        </div>
-
-        {/* Property type + bins */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="reru-label text-reru-text-secondary">Property type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['household', 'business'] as const).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setValue('property_type', t)}
-                  className={cn(
-                    'h-10 rounded-md text-sm font-medium border-[1.5px] capitalize transition-all',
-                    propertyType === t ? 'border-green-700 bg-green-50 text-green-700' : 'border-reru-border bg-white text-reru-text-secondary'
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
+        {/* Email + password — full width */}
+        <div className="sm:col-span-2 rounded-lg bg-green-50 border border-reru-border p-4 space-y-3">
+          <p className="text-sm text-reru-text-secondary">Sign-in &amp; invoicing</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="reru-label text-reru-text-secondary">Email</Label>
+              <Input {...register('email')} type="email" placeholder="you@example.com" />
+              {errors.email && <p className="text-xs text-reru-danger">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="reru-label text-reru-text-secondary">New password</Label>
+              <Input {...register('password')} type="password" placeholder="Leave blank to keep current" autoComplete="new-password" />
+              {errors.password && <p className="text-xs text-reru-danger">{errors.password.message}</p>}
+              <p className="text-xs text-reru-text-muted">Setting a password lets you sign in without an SMS code.</p>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label className="reru-label text-reru-text-secondary">Number of bins</Label>
-            <Input {...register('bin_count')} type="number" min={1} max={100} />
-            {errors.bin_count && <p className="text-xs text-reru-danger">{errors.bin_count.message}</p>}
-          </div>
         </div>
 
-        {/* Alternate contact */}
-        <div className="space-y-1.5">
-          <Label className="reru-label text-reru-text-secondary">Alternate contact (optional)</Label>
-          <Input {...register('alt_phone')} type="tel" placeholder="07XX XXX XXX" />
-          {errors.alt_phone && <p className="text-xs text-reru-danger">{errors.alt_phone.message}</p>}
-          <label className="flex items-center gap-2 cursor-pointer pt-1">
-            <input type="checkbox" className="accent-green-700" {...register('alt_phone_is_whatsapp')} />
-            <span className="text-sm text-reru-text-secondary">This number is on WhatsApp</span>
-          </label>
-        </div>
-
-        {/* Email + password */}
-        <div className="rounded-lg bg-green-50 border border-reru-border p-4 space-y-3">
-          <p className="text-sm text-reru-text-secondary">Sign-in &amp; invoicing</p>
-          <div className="space-y-1.5">
-            <Label className="reru-label text-reru-text-secondary">Email</Label>
-            <Input {...register('email')} type="email" placeholder="you@example.com" />
-            {errors.email && <p className="text-xs text-reru-danger">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label className="reru-label text-reru-text-secondary">New password</Label>
-            <Input {...register('password')} type="password" placeholder="Leave blank to keep current" autoComplete="new-password" />
-            {errors.password && <p className="text-xs text-reru-danger">{errors.password.message}</p>}
-            <p className="text-xs text-reru-text-muted">Setting a password lets you sign in without an SMS code.</p>
-          </div>
-        </div>
-
-        <Button type="submit" className="w-full bg-green-700 hover:bg-green-600 text-white" disabled={loading}>
+        <Button type="submit" className="sm:col-span-2 w-full bg-green-700 hover:bg-green-600 text-white" disabled={loading}>
           {loading ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
           Save changes
         </Button>

@@ -23,7 +23,7 @@ export default async function ProfilePage() {
   const locations = (locationRows ?? []) as ServiceLocation[]
 
   return (
-    <div className="max-w-lg">
+    <div>
       <div className="mb-6">
         <h1 className="reru-h1 text-reru-text-primary">Profile</h1>
         <p className="reru-body text-reru-text-secondary mt-1">Update your details, contact, and sign-in.</p>
