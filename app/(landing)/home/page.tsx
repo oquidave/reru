@@ -1,6 +1,7 @@
 export const dynamic = 'force-static'
 
 import { Hero } from '@/components/landing/hero'
+import { Story } from '@/components/landing/story'
 import { Services } from '@/components/landing/services'
 import { HowItWorks } from '@/components/landing/how-it-works'
 import { Pricing } from '@/components/landing/pricing'
@@ -15,6 +16,7 @@ export default function HomePage() {
   return (
     <main>
       <Hero />
+      <Story />
       <Services />
       <HowItWorks />
       <Pricing />

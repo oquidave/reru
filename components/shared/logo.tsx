@@ -1,4 +1,4 @@
-import { Recycle } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface LogoProps {
@@ -8,29 +8,31 @@ interface LogoProps {
 }
 
 const sizes = {
-  sm: { icon: 16, text: 'text-base font-bold' },
-  md: { icon: 22, text: 'text-xl font-extrabold' },
-  lg: { icon: 28, text: 'text-3xl font-extrabold' },
+  sm: 32,
+  md: 40,
+  lg: 56,
 }
 
 export function Logo({ size = 'md', white = false, className }: LogoProps) {
-  const { icon, text } = sizes[size]
+  const px = sizes[size]
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <Recycle
-        size={icon}
-        strokeWidth={2}
-        className={white ? 'text-white' : 'text-green-700'}
+    <div
+      className={cn(
+        'inline-flex items-center justify-center overflow-hidden',
+        // On dark surfaces, sit the white-background mark on a clean rounded tile.
+        white ? 'bg-white rounded-md p-1 shadow-card' : '',
+        className
+      )}
+    >
+      <Image
+        src="/images/REUSABLE-logo.png"
+        alt="RERU — Reusable Resources"
+        width={px}
+        height={px}
+        priority
+        className="object-contain"
+        style={{ width: px, height: px }}
       />
-      <span
-        className={cn(
-          text,
-          white ? 'text-white' : 'text-green-700',
-          'tracking-tight'
-        )}
-      >
-        RERU
-      </span>
     </div>
   )
 }
