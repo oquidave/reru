@@ -1,9 +1,22 @@
 export type CollectionDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
-export type Plan = 'monthly' | 'annual'
+export type Plan = string   // dynamic — matches pricing_tiers.slug
 export type ClientStatus = 'active' | 'suspended' | 'cancelled'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
 export type CollectionStatus = 'scheduled' | 'completed' | 'missed'
 export type PropertyType = 'household' | 'business'
+
+export interface PricingTier {
+  id: string
+  name: string
+  slug: string
+  price: number | null
+  billing_period: 'month' | 'year' | 'custom'
+  description: string | null
+  is_public: boolean
+  is_active: boolean
+  sort_order: number
+  created_at: string
+}
 
 /** Admin-managed service area (town/neighbourhood). Replaces the old Zone A/B/C enum. */
 export interface ServiceLocation {
@@ -25,6 +38,7 @@ export interface Client {
   other_location: string | null
   collection_day: CollectionDay | null
   plan: Plan | null
+  custom_price: number | null
   status: ClientStatus
   paid_through: string | null
   created_at: string

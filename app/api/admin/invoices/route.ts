@@ -6,13 +6,9 @@ import type { ApiResponse } from '@/types/api'
 const generateInvoicesSchema = z.object({
   client_ids: z.array(z.string().uuid()).optional(),
   date:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
-  plan:       z.enum(['monthly', 'annual']),
 })
 
-const PRICING = {
-  monthly: { qty: 1,  unit_price: 25000, subtotal: 25000,  tax: 1500,  total: 26500  },
-  annual:  { qty: 12, unit_price: 20000, subtotal: 240000, tax: 14400, total: 254400 },
-}
+const TAX_RATE = 0.06
 
 const listInvoicesSchema = z.object({
   status:      z.enum(['pending', 'paid', 'overdue']).optional(),
@@ -104,38 +100,74 @@ export async function POST(req: Request) {
     )
   }
 
-  const { client_ids, date, plan } = parsed.data
-  const pricing = PRICING[plan]
+  const { client_ids, date } = parsed.data
 
-  let targetIds: string[]
+  // Fetch clients with their plan + custom_price
+  let clientQuery = adminUser.supabase
+    .from('reru_clients')
+    .select('id, plan, custom_price')
+    .eq('status', 'active')
 
   if (client_ids && client_ids.length > 0) {
-    targetIds = client_ids
-  } else {
-    const { data: clients, error: clientsError } = await adminUser.supabase
-      .from('reru_clients')
-      .select('id')
-      .eq('status', 'active')
-
-    if (clientsError || !clients) {
-      console.error('[POST /api/admin/invoices]', clientsError)
-      return NextResponse.json({ ok: false, error: 'Failed to fetch clients' }, { status: 500 })
-    }
-
-    targetIds = clients.map((c) => c.id as string)
+    clientQuery = clientQuery.in('id', client_ids)
   }
 
-  if (targetIds.length === 0) {
+  const { data: clients, error: clientsError } = await clientQuery
+  if (clientsError || !clients) {
+    console.error('[POST /api/admin/invoices] fetch clients', clientsError)
+    return NextResponse.json({ ok: false, error: 'Failed to fetch clients' }, { status: 500 })
+  }
+
+  if (clients.length === 0) {
     return NextResponse.json({ ok: true, data: { generated: 0 } })
   }
 
-  const invoiceRows = targetIds.map((client_id) => ({
-    client_id,
-    date,
-    plan,
-    ...pricing,
-    status: 'pending',
-  }))
+  // Load all active pricing tiers for lookup
+  const { data: tiers, error: tiersError } = await adminUser.supabase
+    .from('pricing_tiers')
+    .select('slug, price, billing_period')
+    .eq('is_active', true)
+
+  if (tiersError) {
+    console.error('[POST /api/admin/invoices] fetch tiers', tiersError)
+    return NextResponse.json({ ok: false, error: 'Failed to fetch pricing tiers' }, { status: 500 })
+  }
+
+  const tierMap = new Map((tiers ?? []).map((t) => [t.slug, t]))
+
+  const invoiceRows = []
+  const skipped: string[] = []
+
+  for (const client of clients) {
+    const plan = client.plan as string | null
+    if (!plan) { skipped.push(client.id as string); continue }
+
+    const tier = tierMap.get(plan)
+    const unitPrice = (client.custom_price as number | null) ?? tier?.price ?? null
+
+    if (unitPrice === null) {
+      // Custom tier with no per-client price set — skip
+      skipped.push(client.id as string)
+      continue
+    }
+
+    const qty = 1
+    const subtotal = unitPrice
+    const tax = Math.round(subtotal * TAX_RATE)
+    const total = subtotal + tax
+
+    invoiceRows.push({
+      client_id: client.id,
+      date,
+      plan,
+      qty,
+      unit_price: unitPrice,
+      subtotal,
+      tax,
+      total,
+      status: 'pending',
+    })
+  }
 
   const { error: insertError } = await adminUser.supabase
     .from('reru_invoices')
@@ -151,8 +183,8 @@ export async function POST(req: Request) {
     action:    'generate_invoice',
     entity:    'invoice',
     entity_id: '00000000-0000-0000-0000-000000000000',
-    new_value: { count: invoiceRows.length, plan, date },
+    new_value: { count: invoiceRows.length, skipped: skipped.length, date },
   })
 
-  return NextResponse.json({ ok: true, data: { generated: invoiceRows.length } })
+  return NextResponse.json({ ok: true, data: { generated: invoiceRows.length, skipped: skipped.length } })
 }

@@ -12,7 +12,10 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { ServiceLocation } from '@/types'
+import { formatUGX } from '@/lib/utils'
+import type { ServiceLocation, PricingTier } from '@/types'
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
 const step1Schema = z.object({
   name:  z.string().min(2, 'Name must be at least 2 characters'),
@@ -23,8 +26,9 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   address:        z.string().min(5, 'Address must be at least 5 characters'),
   location_id:    z.string().uuid('Select a location'),
-  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
-  plan:           z.enum(['monthly', 'annual']),
+  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
+  plan:           z.string().min(1, 'Select a plan'),
+  custom_price:   z.coerce.number().int().min(0).nullable().optional(),
 })
 
 type Step1Values = z.infer<typeof step1Schema>
@@ -37,6 +41,7 @@ export function AdminAddClientDialog() {
   const [step1Data, setStep1Data] = useState<Step1Values | null>(null)
   const [loading, setLoading] = useState(false)
   const [locations, setLocations] = useState<ServiceLocation[]>([])
+  const [tiers, setTiers] = useState<PricingTier[]>([])
 
   const form1 = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
@@ -45,11 +50,16 @@ export function AdminAddClientDialog() {
 
   const form2 = useForm<Step2Values>({
     resolver: zodResolver(step2Schema),
-    defaultValues: { address: '', collection_day: 'Monday', plan: 'monthly' },
+    defaultValues: { address: '', collection_day: 'Monday', plan: '' },
   })
 
+  const selectedPlan = form2.watch('plan')
+  const selectedTier = tiers.find((t) => t.slug === selectedPlan)
+  const isCustomBilling = selectedTier?.billing_period === 'custom'
+
   useEffect(() => {
-    if (open && locations.length === 0) {
+    if (!open) return
+    if (locations.length === 0) {
       fetch('/api/admin/locations')
         .then((r) => r.json())
         .then((json: { ok: boolean; data?: ServiceLocation[] }) => {
@@ -57,7 +67,15 @@ export function AdminAddClientDialog() {
         })
         .catch(() => {})
     }
-  }, [open, locations.length])
+    if (tiers.length === 0) {
+      fetch('/api/admin/pricing')
+        .then((r) => r.json())
+        .then((json: { ok: boolean; data?: PricingTier[] }) => {
+          if (json.ok && json.data) setTiers(json.data.filter((t) => t.is_active))
+        })
+        .catch(() => {})
+    }
+  }, [open, locations.length, tiers.length])
 
   function handleStep1(values: Step1Values) {
     setStep1Data(values)
@@ -184,9 +202,7 @@ export function AdminAddClientDialog() {
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const).map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
+                  {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -194,16 +210,37 @@ export function AdminAddClientDialog() {
             <div className="space-y-1.5">
               <Label>Plan</Label>
               <Select
-                defaultValue="monthly"
-                onValueChange={(v) => form2.setValue('plan', v as Step2Values['plan'])}
+                onValueChange={(v) => form2.setValue('plan', v)}
                 disabled={loading}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select a plan" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Monthly — UGX 25,000/mo</SelectItem>
-                  <SelectItem value="annual">Annual — UGX 240,000/yr</SelectItem>
+                  {tiers.map((t) => (
+                    <SelectItem key={t.slug} value={t.slug}>
+                      {t.name}{t.price !== null ? ` — ${formatUGX(t.price)}/${t.billing_period}` : ' — price per client'}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {form2.formState.errors.plan && (
+                <p className="text-sm text-reru-danger">{form2.formState.errors.plan.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>
+                Custom price (UGX)
+                <span className="ml-1 text-reru-text-muted font-normal text-xs">
+                  {isCustomBilling ? '— required for this tier' : '— optional override'}
+                </span>
+              </Label>
+              <Input
+                {...form2.register('custom_price', { setValueAs: (v) => v === '' ? null : Number(v) })}
+                type="number"
+                min={0}
+                placeholder={isCustomBilling ? 'Enter amount' : 'Leave blank to use tier price'}
+                disabled={loading}
+              />
             </div>
 
             <div className="flex justify-between pt-2">

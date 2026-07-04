@@ -6,8 +6,9 @@ import type { Client } from '@/types'
 const updateClientSchema = z.object({
   address:        z.string().min(1).max(500).optional(),
   location_id:    z.string().uuid().optional(),
-  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']).optional(),
-  plan:           z.enum(['monthly', 'annual']).optional(),
+  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']).optional(),
+  plan:           z.string().min(1).max(60).optional(),
+  custom_price:   z.coerce.number().int().min(0).nullable().optional(),
 })
 
 export async function GET(

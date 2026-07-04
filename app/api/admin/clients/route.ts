@@ -10,8 +10,9 @@ const addClientSchema = z.object({
   phone:          z.string().min(10, 'Phone must be at least 10 characters'),
   address:        z.string().min(5, 'Address must be at least 5 characters'),
   location_id:    z.string().uuid('Select a location'),
-  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
-  plan:           z.enum(['monthly', 'annual']),
+  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
+  plan:           z.string().min(1, 'Select a plan'),
+  custom_price:   z.coerce.number().int().min(0).nullable().optional(),
 })
 
 export async function POST(request: Request) {
@@ -47,9 +48,10 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id
 
+    const { custom_price } = parsed.data
     const { data: clientRow, error: clientError } = await supabase
       .from('reru_clients')
-      .insert({ user_id: userId, name, phone, address, location_id, collection_day, plan, status: 'active' })
+      .insert({ user_id: userId, name, phone, address, location_id, collection_day, plan, custom_price: custom_price ?? null, status: 'active' })
       .select()
       .single()
 

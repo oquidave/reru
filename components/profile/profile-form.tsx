@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,12 +12,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { normalizeUgPhone } from '@/lib/phone'
-import type { Client, ServiceLocation } from '@/types'
+import type { Client, ServiceLocation, PricingTier } from '@/types'
 
 const schema = z.object({
   location_id:    z.string().uuid().optional().or(z.literal('')),
   other_location: z.string().max(200).optional().or(z.literal('')),
-  plan:           z.enum(['monthly', 'annual']),
+  plan:           z.string().min(1, 'Select a plan'),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
   address:        z.string().min(5, 'Tell us your street / house address'),
   landmark:       z.string().optional(),
@@ -36,11 +36,6 @@ type FormData = z.infer<typeof schema>
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
-const PLANS = [
-  { id: 'monthly' as const, price: 'UGX 25,000', period: '/month', note: 'Flexible, cancel anytime' },
-  { id: 'annual' as const, price: 'UGX 240,000', period: '/year', note: 'Saves UGX 60,000', tag: 'Best Value' },
-]
-
 interface ProfileFormProps {
   client: Client
   locations: ServiceLocation[]
@@ -51,6 +46,16 @@ interface ProfileFormProps {
 export function ProfileForm({ client, locations, currentEmail, phone }: ProfileFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [tiers, setTiers] = useState<PricingTier[]>([])
+
+  useEffect(() => {
+    fetch('/api/public/pricing')
+      .then((r) => r.json())
+      .then((json: { ok: boolean; data?: PricingTier[] }) => {
+        if (json.ok && json.data) setTiers(json.data)
+      })
+      .catch(() => {})
+  }, [])
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -221,28 +226,36 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
         {/* Plan — full width */}
         <div className="sm:col-span-2 space-y-2">
           <Label className="reru-label text-reru-text-secondary">Plan</Label>
-          <div className="grid grid-cols-2 gap-3">
-            {PLANS.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setValue('plan', p.id)}
-                className={cn(
-                  'relative text-left p-4 rounded-xl border-[1.5px] transition-all',
-                  plan === p.id ? 'border-green-700 bg-green-50' : 'border-reru-border bg-white hover:border-green-200'
-                )}
-              >
-                {p.tag && (
-                  <span className="absolute -top-2.5 right-3 text-xs font-bold px-2 py-0.5 rounded-full bg-reru-accent text-white reru-overline">
-                    {p.tag}
-                  </span>
-                )}
-                <p className="font-bold text-xl text-reru-text-primary">{p.price}</p>
-                <p className="text-sm text-reru-text-muted">{p.period}</p>
-                <p className="text-xs text-reru-text-secondary mt-1">{p.note}</p>
-              </button>
-            ))}
-          </div>
+          {tiers.length === 0 ? (
+            <p className="text-sm text-reru-text-muted">Loading plans…</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {tiers.map(tier => (
+                <button
+                  key={tier.slug}
+                  type="button"
+                  onClick={() => setValue('plan', tier.slug)}
+                  className={cn(
+                    'relative text-left p-4 rounded-xl border-[1.5px] transition-all',
+                    plan === tier.slug ? 'border-green-700 bg-green-50' : 'border-reru-border bg-white hover:border-green-200'
+                  )}
+                >
+                  <p className="font-bold text-base text-reru-text-primary">{tier.name}</p>
+                  {tier.price !== null && (
+                    <p className="text-sm font-semibold text-green-700 mt-0.5">
+                      UGX {tier.price.toLocaleString('en-UG')}
+                    </p>
+                  )}
+                  <p className="text-xs text-reru-text-muted mt-0.5 capitalize">
+                    {tier.billing_period === 'month' ? '/month' : tier.billing_period === 'year' ? '/year' : 'custom'}
+                  </p>
+                  {tier.description && (
+                    <p className="text-xs text-reru-text-secondary mt-1 leading-tight">{tier.description}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Email + password — full width */}

@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type TargetType = 'all' | 'specific'
 type ClientOption = { id: string; name: string; location: string | null }
@@ -22,7 +21,6 @@ export function AdminGenerateInvoicesDialog() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [loadingClients, setLoadingClients] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0] ?? '')
-  const [plan, setPlan] = useState<'monthly' | 'annual'>('monthly')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -47,7 +45,7 @@ export function AdminGenerateInvoicesDialog() {
     if (!date) { toast.error('Please select a date'); return }
     setLoading(true)
     try {
-      const body: { date: string; plan: string; client_ids?: string[] } = { date, plan }
+      const body: { date: string; client_ids?: string[] } = { date }
       if (targetType === 'specific') body.client_ids = selectedIds
 
       const res = await fetch('/api/admin/invoices', {
@@ -55,14 +53,17 @@ export function AdminGenerateInvoicesDialog() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       })
-      const json = await res.json() as { ok: boolean; data?: { generated: number }; error?: string }
+      const json = await res.json() as { ok: boolean; data?: { generated: number; skipped: number }; error?: string }
 
       if (!json.ok) {
         toast.error(json.error ?? 'Failed to generate invoices')
         return
       }
 
-      toast.success(`${json.data?.generated ?? 0} invoice${json.data?.generated !== 1 ? 's' : ''} generated`)
+      const generated = json.data?.generated ?? 0
+      const skipped = json.data?.skipped ?? 0
+      const msg = `${generated} invoice${generated !== 1 ? 's' : ''} generated${skipped > 0 ? ` (${skipped} skipped — custom plan with no price set)` : ''}`
+      toast.success(msg)
       setOpen(false)
       router.refresh()
     } finally {
@@ -144,16 +145,9 @@ export function AdminGenerateInvoicesDialog() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Plan</Label>
-              <Select value={plan} onValueChange={(v) => setPlan(v as typeof plan)} disabled={loading}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly — UGX 26,500 total</SelectItem>
-                  <SelectItem value="annual">Annual — UGX 254,400 total</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-sm text-reru-text-secondary rounded-lg bg-green-50 border border-reru-border px-3 py-2">
+              Each client will be invoiced at their own plan rate. Clients on a custom plan with no price set will be skipped.
+            </p>
 
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={() => setStep(1)} disabled={loading}>Back</Button>

@@ -1,4 +1,4 @@
-export const dynamic = 'force-static'
+export const revalidate = 3600 // revalidate pricing every hour
 
 import { Hero } from '@/components/landing/hero'
 import { Story } from '@/components/landing/story'
