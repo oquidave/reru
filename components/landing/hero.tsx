@@ -14,6 +14,12 @@ export function Hero() {
         <Logo size="md" white />
         <div className="flex items-center gap-3">
           <Link
+            href="/about-us"
+            className="px-4 py-2 rounded-md text-base font-semibold text-white/70 hover:text-white transition-colors duration-150"
+          >
+            About us
+          </Link>
+          <Link
             href="/auth/login"
             className="px-4 py-2 rounded-md text-base font-semibold text-white/80 hover:text-white transition-colors duration-150"
           >

@@ -30,7 +30,8 @@ export function Footer() {
             </p>
           </div>
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider">Get started</p>
+            <p className="text-sm font-semibold text-white/40 uppercase tracking-wider">Company</p>
+            <Link href="/about-us" className="block text-sm text-white/70 hover:text-white transition-colors">About us</Link>
             <Link href="/auth/register" className="block text-sm text-white/70 hover:text-white transition-colors">Register</Link>
             <Link href="/auth/login" className="block text-sm text-white/70 hover:text-white transition-colors">Sign in</Link>
           </div>
