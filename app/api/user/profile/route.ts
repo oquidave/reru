@@ -5,9 +5,10 @@ import { normalizeUgPhone } from '@/lib/phone'
 import type { ApiResponse } from '@/types/api'
 
 const schema = z.object({
-  location_id:    z.string().uuid('Select your location'),
+  location_id:    z.string().uuid().optional().or(z.literal('')),
+  other_location: z.string().max(200).optional().or(z.literal('')),
   plan:           z.enum(['monthly', 'annual']),
-  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
   address:        z.string().min(5, 'Address is required').max(500),
   landmark:       z.string().max(300).optional().or(z.literal('')),
   property_type:  z.enum(['household', 'business']),
@@ -16,7 +17,10 @@ const schema = z.object({
   alt_phone_is_whatsapp: z.boolean().optional().default(false),
   email:          z.string().email('Enter a valid email').optional().or(z.literal('')),
   password:       z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
-})
+}).refine(
+  d => (d.location_id && d.location_id.length > 0) || (d.other_location && d.other_location.trim().length > 0),
+  { message: 'Select your location or describe it below', path: ['location_id'] }
+)
 
 export async function PATCH(request: Request): Promise<NextResponse<ApiResponse<{ message: string }>>> {
   try {
@@ -56,21 +60,25 @@ export async function PATCH(request: Request): Promise<NextResponse<ApiResponse<
       return NextResponse.json({ ok: false, error: 'Complete onboarding first' }, { status: 409 })
     }
 
-    // Validate the chosen location is real and active.
-    const { data: location } = await service
-      .from('service_locations')
-      .select('id')
-      .eq('id', input.location_id)
-      .eq('active', true)
-      .maybeSingle()
-    if (!location) {
-      return NextResponse.json({ ok: false, error: 'Selected location is unavailable' }, { status: 400 })
+    // Validate the chosen service location, unless the user entered a custom one.
+    const hasCustomLocation = Boolean(input.other_location?.trim())
+    if (!hasCustomLocation) {
+      const { data: location } = await service
+        .from('service_locations')
+        .select('id')
+        .eq('id', input.location_id!)
+        .eq('active', true)
+        .maybeSingle()
+      if (!location) {
+        return NextResponse.json({ ok: false, error: 'Selected location is unavailable' }, { status: 400 })
+      }
     }
 
     const { error: updateError } = await service
       .from('reru_clients')
       .update({
-        location_id:           input.location_id,
+        location_id:           hasCustomLocation ? null : input.location_id!,
+        other_location:        hasCustomLocation ? input.other_location!.trim() : null,
         plan:                  input.plan,
         collection_day:        input.collection_day,
         address:               input.address,

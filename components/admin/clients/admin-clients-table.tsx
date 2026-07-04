@@ -46,7 +46,9 @@ export function AdminClientsTable({ clients }: AdminClientsTableProps) {
                   <p className="text-md font-semibold text-reru-text-primary">{client.name}</p>
                   <p className="text-sm text-reru-text-muted">{client.phone}</p>
                 </td>
-                <td className="px-6 py-4 text-md text-reru-text-secondary">{client.location ?? '—'}</td>
+                <td className="px-6 py-4 text-md text-reru-text-secondary">
+                  {client.location ?? (client.other_location ? `${client.other_location} (other)` : '—')}
+                </td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary capitalize">{client.plan}</td>
                 <td className="px-6 py-4"><StatusBadge status={client.status} /></td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary whitespace-nowrap">

@@ -15,9 +15,10 @@ import { normalizeUgPhone } from '@/lib/phone'
 import type { ServiceLocation } from '@/types'
 
 const schema = z.object({
-  location_id:    z.string().uuid('Select your location'),
+  location_id:    z.string().uuid().optional().or(z.literal('')),
+  other_location: z.string().max(200).optional().or(z.literal('')),
   plan:           z.enum(['monthly', 'annual']),
-  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
+  collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
   address:        z.string().min(5, 'Tell us your street / house address'),
   landmark:       z.string().optional(),
   property_type:  z.enum(['household', 'business']),
@@ -26,11 +27,14 @@ const schema = z.object({
   alt_phone_is_whatsapp: z.boolean().optional(),
   email:          z.string().email('Enter a valid email').optional().or(z.literal('')),
   password:       z.string().min(6, 'At least 6 characters').optional().or(z.literal('')),
-})
+}).refine(
+  d => (d.location_id && d.location_id.length > 0) || (d.other_location && d.other_location.trim().length > 0),
+  { message: 'Select your location or describe it below', path: ['location_id'] }
+)
 
 type FormData = z.infer<typeof schema>
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
 const PLANS = [
   { id: 'monthly' as const, price: 'UGX 25,000', period: '/month', note: 'Flexible, cancel anytime' },
@@ -44,6 +48,8 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      location_id: '',
+      other_location: '',
       plan: 'monthly',
       collection_day: 'Wednesday',
       property_type: 'household',
@@ -97,7 +103,10 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
               <button
                 key={loc.id}
                 type="button"
-                onClick={() => setValue('location_id', loc.id, { shouldValidate: true })}
+                onClick={() => {
+                  setValue('location_id', loc.id, { shouldValidate: true })
+                  setValue('other_location', '', { shouldValidate: true })
+                }}
                 className={cn(
                   'px-3.5 py-1.5 rounded-full text-sm font-medium border-[1.5px] transition-all',
                   locationId === loc.id
@@ -108,7 +117,30 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
                 {loc.name}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setValue('location_id', '', { shouldValidate: true })
+                setValue('other_location', ' ', { shouldValidate: true })
+              }}
+              className={cn(
+                'px-3.5 py-1.5 rounded-full text-sm font-medium border-[1.5px] transition-all',
+                !locationId
+                  ? 'border-green-700 bg-green-50 text-green-700'
+                  : 'border-reru-border bg-white text-reru-text-secondary hover:border-green-200'
+              )}
+            >
+              Other
+            </button>
           </div>
+          {!locationId && (
+            <Input
+              {...register('other_location')}
+              placeholder="Describe your area or neighbourhood"
+              className="mt-2"
+              autoFocus
+            />
+          )}
           {errors.location_id && <p className="text-xs text-reru-danger">{errors.location_id.message}</p>}
         </div>
 

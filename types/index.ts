@@ -1,4 +1,4 @@
-export type CollectionDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'
+export type CollectionDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
 export type Plan = 'monthly' | 'annual'
 export type ClientStatus = 'active' | 'suspended' | 'cancelled'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
@@ -22,6 +22,7 @@ export interface Client {
   location_id: string | null
   /** Joined service_locations.name, populated by list/detail queries. */
   location: string | null
+  other_location: string | null
   collection_day: CollectionDay | null
   plan: Plan | null
   status: ClientStatus
