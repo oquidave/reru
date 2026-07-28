@@ -1142,3 +1142,4 @@ Configure this URL — plus the Security Header (`Authorization`) and its value
 - `POST /api/user/device-token` — push notification token registration (v2)
 - SMS via Africa's Talking is **implemented** for auth OTP delivery; SMS reminder/notification triggers (collection reminders, payment nudges) are still planned (v2)
 - Disbursements / payouts via ioTec — not implemented (collections only)
+- No automatic resolution of past-dated collections: a `scheduled` row stays `scheduled` forever unless an admin marks it completed or missed, and no view lists the unresolved backlog. See [`collection-lifecycle.md`](./collection-lifecycle.md)
