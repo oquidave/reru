@@ -29,13 +29,14 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
     id: string
     status: string
     notes: string | null
+    bags_collected: number | null
     reru_clients: { id: string; name: string; address: string; phone: string; service_locations: { name: string } | null } | null
   }
 
   const [{ data: rows }, { data: locationRows }, { data: clientRows }] = await Promise.all([
     supabase
       .from('reru_collections')
-      .select('id, status, notes, reru_clients(id, name, address, phone, service_locations(name))')
+      .select('id, status, notes, bags_collected, reru_clients(id, name, address, phone, service_locations(name))')
       .eq('scheduled_date', selectedDate)
       .order('status'),
     supabase.from('service_locations').select('name').eq('active', true).order('name'),
@@ -54,6 +55,7 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
   const completed = collections.filter((c) => c.status === 'completed').length
   const missed    = collections.filter((c) => c.status === 'missed').length
   const scheduled = collections.filter((c) => c.status === 'scheduled').length
+  const bagsToday = collections.reduce((sum, c) => sum + (c.bags_collected ?? 0), 0)
 
   // Group collections by location; include any locations that have collections plus an
   // "Unassigned" bucket for clients without a location set.
@@ -66,6 +68,7 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
         id:             c.id,
         status:         c.status,
         notes:          c.notes,
+        bags_collected: c.bags_collected,
         client_name:    c.reru_clients?.name    ?? 'Unknown',
         client_address: c.reru_clients?.address ?? '',
         client_phone:   c.reru_clients?.phone   ?? '',
@@ -92,6 +95,7 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
           { label: 'Scheduled', value: scheduled, color: 'text-blue-600' },
           { label: 'Completed', value: completed, color: 'text-green-700' },
           { label: 'Missed',    value: missed,    color: 'text-reru-danger' },
+          { label: 'Bags',      value: bagsToday, color: 'text-green-700' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white border border-reru-border rounded-xl px-5 py-3 shadow-card flex items-center gap-3">
             <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
@@ -122,6 +126,7 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
                     <tr className="border-b border-reru-border">
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Client</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Phone</th>
+                      <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Bags</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Notes</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Status</th>
                       <th className="px-5 py-3" />

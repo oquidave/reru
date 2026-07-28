@@ -20,13 +20,14 @@ export default async function AdminSchedulePage() {
     id: string
     status: string
     notes: string | null
+    bags_collected: number | null
     reru_clients: { id: string; name: string; address: string; phone: string; service_locations: { name: string } | null } | null
   }
 
   const [{ data: rows }, { data: locationRows }, { data: clientRows }] = await Promise.all([
     supabase
       .from('reru_collections')
-      .select('id, status, notes, reru_clients(id, name, address, phone, service_locations(name))')
+      .select('id, status, notes, bags_collected, reru_clients(id, name, address, phone, service_locations(name))')
       .eq('scheduled_date', todayISO)
       .order('status'),
     supabase.from('service_locations').select('name').eq('active', true).order('name'),
@@ -43,6 +44,7 @@ export default async function AdminSchedulePage() {
   const total     = collections.length
   const completed = collections.filter((c) => c.status === 'completed').length
   const progress  = total > 0 ? Math.round((completed / total) * 100) : 0
+  const bagsToday = collections.reduce((sum, c) => sum + (c.bags_collected ?? 0), 0)
 
   const byLocation = [...locationNames, 'Unassigned'].map((location) => ({
     location,
@@ -52,6 +54,7 @@ export default async function AdminSchedulePage() {
         id:             c.id,
         status:         c.status,
         notes:          c.notes,
+        bags_collected: c.bags_collected,
         client_name:    c.reru_clients?.name    ?? 'Unknown',
         client_address: c.reru_clients?.address ?? '',
         client_phone:   c.reru_clients?.phone   ?? '',
@@ -79,6 +82,9 @@ export default async function AdminSchedulePage() {
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-reru-text-primary">
               {completed} of {total} completed
+              {bagsToday > 0 && (
+                <span className="font-normal text-reru-text-secondary"> · {bagsToday} bag{bagsToday === 1 ? '' : 's'} collected</span>
+              )}
             </p>
             <p className="text-sm font-bold text-green-700">{progress}%</p>
           </div>
@@ -115,6 +121,7 @@ export default async function AdminSchedulePage() {
                     <tr className="border-b border-reru-border">
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Client</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Phone</th>
+                      <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Bags</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Notes</th>
                       <th className="px-5 py-3 text-left reru-overline text-reru-text-muted">Status</th>
                       <th className="px-5 py-3" />

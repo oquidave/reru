@@ -696,6 +696,8 @@ Clients that already have a collection on that date are left untouched, so the c
 
 Update a collection — mark completed or missed, record bags collected, add notes.
 
+The admin web UI captures `bags_collected` in the same request that sets `status: "completed"`, since that is the only moment the crew knows the count. Other clients should do the same; a completed collection with no bag count is counted in `completed_without_bags` on `GET /api/admin/statistics`.
+
 **Request body** (all fields optional, at least one required)
 ```json
 {
@@ -745,6 +747,49 @@ Clients with no `collection_day`, or a value outside `Monday`–`Saturday`, are 
 | `scheduled` | Records newly created by this call |
 | `already_scheduled` | Dates that already had a record and were left alone |
 | `skipped_clients` | Active clients with a missing or unrecognised collection day |
+
+---
+
+### `GET /api/admin/statistics`
+
+Collection volume and service-reliability statistics. `totals` are all-time; `weekly` and `by_location` cover the requested window.
+
+Weeks begin on Monday. Every week in the window is present in `weekly`, including weeks with no activity (all zeros), so clients can plot the series without filling gaps themselves.
+
+**Query params**
+
+| Param | Type | Constraints | Default |
+|---|---|---|---|
+| `weeks` | number | 1–104 | `12` |
+
+**Response `200`**
+```json
+{
+  "ok": true,
+  "data": {
+    "totals": {
+      "bags": 50,
+      "completed": 19,
+      "missed": 3,
+      "scheduled": 25,
+      "completion_rate": 76,
+      "average_bags_per_collection": 2.63,
+      "completed_without_bags": 1
+    },
+    "current_week": { "week_start": "2026-07-27", "bags": 12, "change_vs_previous_week": -3 },
+    "weekly": [
+      { "week_start": "2026-05-11", "scheduled_total": 4, "completed": 4, "missed": 0, "bags": 11 }
+    ],
+    "by_location": [
+      { "location": "Nsasa", "scheduled_total": 16, "completed": 14, "missed": 2, "bags": 36 }
+    ]
+  }
+}
+```
+
+`completed_without_bags` counts completed collections with no bag count recorded — those understate `bags`, so surface it rather than presenting the total as exact. Clients with no service location are grouped under `"Unassigned"`.
+
+**Errors** — `400` invalid `weeks` · `401` not an admin
 
 ---
 

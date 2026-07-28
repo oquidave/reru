@@ -16,7 +16,7 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'Content-Security-Policy':
-    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
+    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
 }
 
 function applySecurityHeaders(response: NextResponse): NextResponse {
