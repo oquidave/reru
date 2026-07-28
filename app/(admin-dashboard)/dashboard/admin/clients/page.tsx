@@ -27,6 +27,8 @@ export default async function AdminClientsPage({ searchParams }: PageProps) {
     paid_through: string | null; created_at: string
     landmark: string | null; property_type: string | null; bin_count: number | null
     alt_phone: string | null; alt_phone_is_whatsapp: boolean
+    latitude: number | null; longitude: number | null
+    location_accuracy_m: number | null; location_captured_at: string | null
     service_locations: { name: string } | null
   }
 

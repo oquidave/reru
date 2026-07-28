@@ -55,6 +55,12 @@ export interface Client {
   bin_count: number | null
   alt_phone: string | null
   alt_phone_is_whatsapp: boolean
+  // GPS pickup point. Latitude and longitude are always both set or both null.
+  latitude: number | null
+  longitude: number | null
+  /** Accuracy radius in metres from the capturing device; null when entered by hand. */
+  location_accuracy_m: number | null
+  location_captured_at: string | null
 }
 
 export interface Invoice {

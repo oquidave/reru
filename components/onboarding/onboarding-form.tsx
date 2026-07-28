@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { normalizeUgPhone } from '@/lib/phone'
+import { LocationCapture, type Coordinates } from '@/components/shared/location-capture'
 import type { ServiceLocation, PricingTier } from '@/types'
 
 const schema = z.object({
@@ -40,6 +41,7 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [tiers, setTiers] = useState<PricingTier[]>([])
+  const [coords, setCoords] = useState<Coordinates | null>(null)
 
   useEffect(() => {
     fetch('/api/public/pricing')
@@ -73,7 +75,12 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
       const res = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          latitude:            coords?.latitude ?? null,
+          longitude:           coords?.longitude ?? null,
+          location_accuracy_m: coords?.accuracy_m ?? null,
+        }),
       })
       const result = await res.json()
       if (!res.ok || !result.ok) {
@@ -158,6 +165,16 @@ export function OnboardingForm({ locations }: { locations: ServiceLocation[] }) 
         <div className="space-y-1.5">
           <Label className="reru-label text-reru-text-secondary">Nearest landmark (optional)</Label>
           <Input {...register('landmark')} placeholder="e.g. opposite Total petrol station" />
+        </div>
+
+        {/* GPS pin — optional, but capturing it here gives the best coverage. */}
+        <div className="sm:col-span-2 pt-2">
+          <LocationCapture
+            value={coords}
+            onChange={setCoords}
+            label="Pickup location (optional)"
+            hint="Pinning your gate helps the collection crew find you. You can add or change this later from your profile."
+          />
         </div>
 
         {/* Plan */}

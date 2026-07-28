@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
+import { coordinateFields, coordinateUpdate } from '@/lib/geo'
 import type { Client } from '@/types'
 
 const updateClientSchema = z.object({
@@ -9,6 +10,7 @@ const updateClientSchema = z.object({
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']).optional(),
   plan:           z.string().min(1).max(60).optional(),
   custom_price:   z.coerce.number().int().min(0).nullable().optional(),
+  ...coordinateFields,
 })
 
 export async function GET(
@@ -67,9 +69,15 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: 'Client not found' }, { status: 404 })
   }
 
+  // Raw coordinate input never reaches the database directly: coordinateUpdate
+  // resolves it so location_captured_at is stamped and a half-pair is impossible.
+  const { latitude, longitude, location_accuracy_m, ...fields } = parsed.data
+  void latitude; void longitude; void location_accuracy_m
+  const updatePayload = { ...fields, ...(coordinateUpdate(parsed.data) ?? {}) }
+
   const { data: updatedClient, error } = await adminUser.supabase
     .from('reru_clients')
-    .update(parsed.data)
+    .update(updatePayload)
     .eq('id', id)
     .select()
     .single()

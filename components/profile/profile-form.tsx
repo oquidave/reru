@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { normalizeUgPhone } from '@/lib/phone'
+import { LocationCapture, type Coordinates } from '@/components/shared/location-capture'
 import type { Client, ServiceLocation, PricingTier } from '@/types'
 
 const schema = z.object({
@@ -47,6 +48,11 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [tiers, setTiers] = useState<PricingTier[]>([])
+  const [coords, setCoords] = useState<Coordinates | null>(
+    client.latitude != null && client.longitude != null
+      ? { latitude: client.latitude, longitude: client.longitude, accuracy_m: client.location_accuracy_m }
+      : null
+  )
 
   useEffect(() => {
     fetch('/api/public/pricing')
@@ -85,7 +91,12 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          latitude:            coords?.latitude ?? null,
+          longitude:           coords?.longitude ?? null,
+          location_accuracy_m: coords?.accuracy_m ?? null,
+        }),
       })
       const result = await res.json()
       if (!res.ok || !result.ok) {
@@ -183,6 +194,16 @@ export function ProfileForm({ client, locations, currentEmail, phone }: ProfileF
         <div className="space-y-1.5">
           <Label className="reru-label text-reru-text-secondary">Nearest landmark (optional)</Label>
           <Input {...register('landmark')} placeholder="e.g. opposite Total petrol station" />
+        </div>
+
+        {/* GPS pin — full width */}
+        <div className="sm:col-span-2 pt-2">
+          <LocationCapture
+            value={coords}
+            onChange={setCoords}
+            label="Pickup location (optional)"
+            hint="Pinning your gate helps the collection crew find you. This is only visible to RERU staff."
+          />
         </div>
 
         {/* Property type */}

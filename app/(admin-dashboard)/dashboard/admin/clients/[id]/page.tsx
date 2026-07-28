@@ -5,6 +5,7 @@ import { getAdminUser } from '@/lib/auth/get-admin-user'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { AdminEditClientDialog } from '@/components/admin/clients/admin-edit-client-dialog'
+import { AdminClientLocationCard } from '@/components/admin/clients/admin-client-location-card'
 import { AdminSuspendDialog } from '@/components/admin/clients/admin-suspend-dialog'
 import { AdminClientInvoicesTable } from '@/components/admin/clients/admin-client-invoices-table'
 import { AdminClientCollectionsTable } from '@/components/admin/clients/admin-client-collections-table'
@@ -85,6 +86,18 @@ export default async function AdminClientDetailPage({
           ))}
         </div>
       </div>
+
+      {/* Pickup location */}
+      <AdminClientLocationCard
+        clientId={client.id}
+        clientName={client.name}
+        initial={
+          client.latitude != null && client.longitude != null
+            ? { latitude: Number(client.latitude), longitude: Number(client.longitude), accuracy_m: client.location_accuracy_m }
+            : null
+        }
+        capturedAt={client.location_captured_at}
+      />
 
       {/* Invoices */}
       <div className="mb-8">

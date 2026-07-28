@@ -210,6 +210,20 @@ Completes a newly-signed-up user's profile by creating their `reru_clients` row.
 | `alt_phone_is_whatsapp` | boolean | whether `alt_phone` is on WhatsApp |
 | `email` | string | optional — sets secondary login + invoicing email |
 | `password` | string | optional — sets a password for secondary login |
+| `latitude` | number\|null | optional — WGS84, −90…90. See *Pickup coordinates* below |
+| `longitude` | number\|null | optional — WGS84, −180…180 |
+| `location_accuracy_m` | number\|null | optional — accuracy radius in metres from the device |
+
+#### Pickup coordinates
+
+`latitude` and `longitude` are the household's GPS pickup point, used by the admin map. They are accepted by this endpoint, `PATCH /api/user/profile`, and `PATCH /api/admin/clients/:id`, and behave the same way in all three:
+
+- They are **only valid as a pair.** Sending one without the other clears the stored pin rather than saving half a coordinate; the database enforces the same rule.
+- **Omitting both leaves any stored pin untouched.** To clear a pin explicitly, send both as `null`.
+- `location_captured_at` is stamped server-side whenever a pin is written — clients never send it.
+- `location_accuracy_m` is the device's reported accuracy radius. Send `null` for a hand-placed pin.
+
+Coordinates are stored at 6 decimal places (about 0.1 m); values are rounded on write.
 
 **Response `200`**
 ```json
@@ -577,9 +591,14 @@ Update editable fields on a client. Send only the fields you want to change.
   "address": "New address",
   "location_id": "uuid",
   "collection_day": "Wednesday",
-  "plan": "annual"
+  "plan": "annual",
+  "latitude": 0.353600,
+  "longitude": 32.755400,
+  "location_accuracy_m": 12.5
 }
 ```
+
+Coordinates follow the pair rules in *Pickup coordinates* under `POST /api/user/onboarding`: omit both to leave the stored pin alone, send both as `null` to clear it.
 
 **Response `200`**
 ```json
@@ -998,8 +1017,14 @@ collection_day        string?  "Monday" | "Tuesday" | "Wednesday" | "Thursday" |
 plan                  string?  "monthly" | "annual" — filled at onboarding
 status                string   "active" | "suspended" | "cancelled"
 paid_through          string?  YYYY-MM-DD — date of last settled invoice
+latitude              number?  WGS84 pickup point — always paired with longitude
+longitude             number?  WGS84 pickup point — always paired with latitude
+location_accuracy_m   number?  device accuracy radius in metres; null for a hand-placed pin
+location_captured_at  string?  ISO 8601 — stamped server-side when a pin is written
 created_at            string   ISO 8601
 ```
+
+`latitude`/`longitude` are null until a pickup point is captured. Treat them as a pair: either both are present or both are null. See *Pickup coordinates* under `POST /api/user/onboarding`.
 
 ### ServiceLocation
 ```

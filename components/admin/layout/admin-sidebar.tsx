@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Users, Truck, FileText, CalendarCheck, MapPin, BadgeDollarSign, BarChart3, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Truck, FileText, CalendarCheck, MapPin, BadgeDollarSign, BarChart3, Map, LogOut } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/dashboard/admin/invoices',    label: 'Invoices',    icon: FileText,        exact: false },
   { href: '/dashboard/admin/schedule',    label: 'Today',       icon: CalendarCheck,   exact: false },
   { href: '/dashboard/admin/statistics',  label: 'Statistics',  icon: BarChart3,       exact: false },
+  { href: '/dashboard/admin/map',         label: 'Map',         icon: Map,             exact: false },
   { href: '/dashboard/admin/locations',   label: 'Locations',   icon: MapPin,            exact: false },
   { href: '/dashboard/admin/pricing',     label: 'Pricing',     icon: BadgeDollarSign,   exact: false },
 ]

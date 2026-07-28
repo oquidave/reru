@@ -9,14 +9,21 @@ const scriptSrc =
     ? "script-src 'self' 'unsafe-inline' fonts.googleapis.com"
     : "script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com"
 
+// OpenStreetMap raster tiles for the collection map. Tiles are images fetched
+// straight from the tile servers, so they need an img-src allowance; nothing
+// else is loaded cross-origin from these hosts.
+const tileHosts = 'https://*.tile.openstreetmap.org https://tile.openstreetmap.org'
+
 const securityHeaders = {
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  // geolocation=(self) — households pin their own address from their phone, and
+  // staff capture a pin at the gate. Still denied to any embedded third party.
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self)',
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'Content-Security-Policy':
-    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *.supabase.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
+    `default-src 'self'; ${scriptSrc}; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: ${tileHosts}; connect-src 'self' *.supabase.co; frame-src https://www.youtube.com https://www.youtube-nocookie.com`,
 }
 
 function applySecurityHeaders(response: NextResponse): NextResponse {

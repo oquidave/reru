@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createSupabaseServerClient, createSupabaseServiceRoleClient } from '@/lib/supabase/server'
 import { normalizeUgPhone } from '@/lib/phone'
+import { coordinateFields, coordinateUpdate } from '@/lib/geo'
 import type { ApiResponse } from '@/types/api'
 
 const schema = z.object({
@@ -17,6 +18,7 @@ const schema = z.object({
   alt_phone_is_whatsapp: z.boolean().optional().default(false),
   email:          z.string().email('Enter a valid email').optional().or(z.literal('')),
   password:       z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
+  ...coordinateFields,
 }).refine(
   d => (d.location_id && d.location_id.length > 0) || (d.other_location && d.other_location.trim().length > 0),
   { message: 'Select your location or describe it below', path: ['location_id'] }
@@ -99,6 +101,7 @@ export async function PATCH(request: Request): Promise<NextResponse<ApiResponse<
         bin_count:             input.bin_count,
         alt_phone:             altPhone,
         alt_phone_is_whatsapp: input.alt_phone_is_whatsapp ?? false,
+        ...(coordinateUpdate(input) ?? {}),
       })
       .eq('user_id', user.id)
 
