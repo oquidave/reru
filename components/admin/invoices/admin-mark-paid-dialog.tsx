@@ -9,14 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { PAYMENT_METHOD_OPTIONS } from '@/lib/payments/labels'
 import type { Invoice, PaymentMethod } from '@/types'
-
-const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
-  { value: 'mtn_momo',       label: 'MTN MoMo' },
-  { value: 'airtel',         label: 'Airtel Money' },
-  { value: 'bank_transfer',  label: 'Bank Transfer' },
-  { value: 'cash',           label: 'Cash' },
-]
 
 interface AdminMarkPaidDialogProps {
   invoice: Invoice
@@ -85,7 +79,7 @@ export function AdminMarkPaidDialog({ invoice }: AdminMarkPaidDialogProps) {
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_METHODS.map((m) => (
+                {PAYMENT_METHOD_OPTIONS.map((m) => (
                   <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                 ))}
               </SelectContent>

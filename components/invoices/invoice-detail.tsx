@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Download } from 'lucide-react'
+import { ArrowLeft, Download, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { formatDate, formatUGX } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { PayWithMomoDialog } from '@/components/invoices/pay-with-momo-dialog'
+import { paymentMethodLabel } from '@/lib/payments/labels'
 import type { Invoice, Client } from '@/types'
 
 interface InvoiceDetailProps {
@@ -15,6 +16,12 @@ interface InvoiceDetailProps {
 }
 
 export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
+  // A settled invoice is a proof of payment, not a request for one. It is titled
+  // as a receipt and drops the payment instructions, which otherwise tell someone
+  // who has already paid how to pay.
+  const isPaid = invoice.status === 'paid'
+  const documentTitle = isPaid ? 'RECEIPT' : 'INVOICE'
+
   async function handleDownloadPdf() {
     const { jsPDF } = await import('jspdf')
     const { default: autoTable } = await import('jspdf-autotable')
@@ -32,12 +39,14 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
     doc.text('Reusable Resources — Nsasa Estate, Mukono District', 15, 20)
-    doc.setFontSize(14)
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.text(invoice.id, 195, 12, { align: 'right' })
+    doc.text(documentTitle, 195, 10, { align: 'right' })
+    doc.setFontSize(14)
+    doc.text(invoice.id, 195, 17, { align: 'right' })
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.text(`Date: ${formatDate(invoice.date)}`, 195, 20, { align: 'right' })
+    doc.text(`Date: ${formatDate(invoice.date)}`, 195, 24, { align: 'right' })
 
     doc.setTextColor(30, 30, 30)
 
@@ -80,18 +89,50 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
       margin: { left: 15, right: 15 },
     })
 
-    // Payment instructions
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
-    doc.setFillColor(245, 250, 245)
-    doc.roundedRect(15, finalY, 180, 32, 3, 3, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.text('PAYMENT INSTRUCTIONS', 20, finalY + 8)
-    doc.setFont('helvetica', 'normal')
-    doc.text('MTN MoMo: 0778 527 802  |  Airtel: 0704 132 691', 20, finalY + 16)
-    doc.text('Bank of Africa — A/C 06566780001  |  Cash accepted in person', 20, finalY + 24)
 
-    doc.save(`${invoice.id}.pdf`)
+    if (isPaid) {
+      // Proof of payment: what was paid, when, how, and against which reference.
+      doc.setFillColor(245, 250, 245)
+      doc.roundedRect(15, finalY, 180, 40, 3, 3, 'F')
+
+      doc.setTextColor(...green)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.text('PAID IN FULL', 20, finalY + 11)
+
+      doc.setTextColor(30, 30, 30)
+      doc.setFontSize(9)
+      doc.text('Amount paid', 20, finalY + 21)
+      doc.text('Date paid', 20, finalY + 28)
+      doc.text('Method', 110, finalY + 21)
+      doc.text('Reference', 110, finalY + 28)
+
+      doc.setFont('helvetica', 'normal')
+      doc.text(formatUGX(invoice.total), 55, finalY + 21)
+      doc.text(invoice.paid_at ? formatDate(invoice.paid_at) : 'Not recorded', 55, finalY + 28)
+      doc.text(paymentMethodLabel(invoice.payment_method), 140, finalY + 21)
+      doc.text(invoice.payment_ref || 'Not recorded', 140, finalY + 28)
+
+      doc.setFontSize(8)
+      doc.setTextColor(110, 110, 110)
+      doc.text(
+        'This receipt confirms payment in full. No further payment is due for this invoice.',
+        20,
+        finalY + 36
+      )
+    } else {
+      doc.setFillColor(245, 250, 245)
+      doc.roundedRect(15, finalY, 180, 32, 3, 3, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.text('PAYMENT INSTRUCTIONS', 20, finalY + 8)
+      doc.setFont('helvetica', 'normal')
+      doc.text('MTN MoMo: 0778 527 802  |  Airtel: 0704 132 691', 20, finalY + 16)
+      doc.text('Bank of Africa — A/C 06566780001  |  Cash accepted in person', 20, finalY + 24)
+    }
+
+    doc.save(isPaid ? `RECEIPT-${invoice.id}.pdf` : `${invoice.id}.pdf`)
   }
 
   return (
@@ -116,6 +157,7 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
             <p className="text-sm text-reru-text-muted">Tel: 0778 527 802</p>
           </div>
           <div className="text-right">
+            <p className="reru-overline text-reru-text-muted">{documentTitle}</p>
             <p className="text-3xl font-extrabold text-reru-text-primary">{invoice.id}</p>
             <p className="text-md text-reru-text-muted mt-1">{formatDate(invoice.date)}</p>
             <StatusBadge status={invoice.status} className="mt-2" />
@@ -177,28 +219,50 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
           </div>
         </div>
 
-        {/* Payment instructions */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-6">
-          <p className="reru-label text-green-700 mb-3">Payment instructions</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-reru-text-secondary">
-            <p><span className="font-semibold">MTN MoMo:</span> 0778 527 802</p>
-            <p><span className="font-semibold">Airtel:</span> 0704 132 691</p>
-            <p><span className="font-semibold">Bank of Africa:</span> A/C 06566780001</p>
+        {isPaid ? (
+          /* Proof of payment — replaces the instructions, which would otherwise tell
+             someone who has already paid how to pay. */
+          <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle2 size={18} strokeWidth={2} className="text-green-700" />
+              <p className="reru-label text-green-700">Paid in full</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Amount paid', value: formatUGX(invoice.total) },
+                { label: 'Date paid',   value: invoice.paid_at ? formatDate(invoice.paid_at) : 'Not recorded' },
+                { label: 'Method',      value: paymentMethodLabel(invoice.payment_method) },
+                { label: 'Reference',   value: invoice.payment_ref || 'Not recorded' },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p className="reru-overline text-reru-text-muted mb-0.5">{label.toUpperCase()}</p>
+                  <p className="text-md font-semibold text-reru-text-primary break-words">{value}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-reru-text-secondary mt-4">
+              No further payment is due for this invoice.
+            </p>
           </div>
-        </div>
+        ) : (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-6">
+            <p className="reru-label text-green-700 mb-3">Payment instructions</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-reru-text-secondary">
+              <p><span className="font-semibold">MTN MoMo:</span> 0778 527 802</p>
+              <p><span className="font-semibold">Airtel:</span> 0704 132 691</p>
+              <p><span className="font-semibold">Bank of Africa:</span> A/C 06566780001</p>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3">
-          {invoice.status !== 'paid' && (
-            <PayWithMomoDialog invoice={invoice} defaultPhone={client.phone} />
-          )}
+          {!isPaid && <PayWithMomoDialog invoice={invoice} defaultPhone={client.phone} />}
           <Button
             onClick={handleDownloadPdf}
-            variant={invoice.status !== 'paid' ? 'outline' : 'default'}
-            className={invoice.status !== 'paid'
-              ? 'gap-2'
-              : 'bg-green-700 hover:bg-green-600 text-white gap-2'}
+            variant={isPaid ? 'default' : 'outline'}
+            className={isPaid ? 'bg-green-700 hover:bg-green-600 text-white gap-2' : 'gap-2'}
           >
-            <Download size={16} /> Download PDF
+            <Download size={16} /> {isPaid ? 'Download receipt' : 'Download invoice'}
           </Button>
         </div>
       </div>

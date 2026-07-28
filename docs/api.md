@@ -1052,6 +1052,17 @@ payment_ref    string?
 created_at     string   ISO 8601
 ```
 
+#### Presenting a paid invoice as a receipt
+
+There is no separate receipt resource — a paid invoice **is** the receipt. Every client should render `status: "paid"` differently from an unpaid invoice:
+
+- Title the document **Receipt**, not Invoice
+- Show `paid_at`, `payment_method`, and `payment_ref` as proof of payment
+- **Drop the payment instructions.** Showing MoMo/Airtel/bank details to someone who has already paid is the specific bug this convention exists to prevent
+- Offer the download as `RECEIPT-<invoice id>.pdf`
+
+`paid_at`, `payment_method`, and `payment_ref` are nullable even when `status` is `paid` — an older row, or one marked paid without full details. Render "Not recorded" rather than blank or `undefined`; a receipt with a missing field is still valid proof, but a receipt showing `undefined` is not.
+
 ### Collection
 ```
 id             string   UUID
