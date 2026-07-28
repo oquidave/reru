@@ -660,6 +660,38 @@ All collections across all clients, with client details joined.
 
 ---
 
+### `POST /api/admin/collections`
+
+Schedule a one-off collection for one or more specific clients on a chosen date. Use this for ad-hoc pickups; use `bulk-schedule` to generate the recurring weekly rota.
+
+Clients that already have a collection on that date are left untouched, so the call is safe to re-run.
+
+**Request body**
+```json
+{
+  "client_ids": ["8f3c…", "b21a…"],
+  "scheduled_date": "2026-08-04",
+  "notes": "Extra pickup after public holiday"
+}
+```
+
+| Field | Type | Constraints |
+|---|---|---|
+| `client_ids` | string[] | 1–200 client UUIDs, required |
+| `scheduled_date` | string | `YYYY-MM-DD`, required |
+| `notes` | string | max 1000 chars, optional |
+
+**Response `200`**
+```json
+{ "ok": true, "data": { "scheduled": 2, "already_scheduled": 0 } }
+```
+
+`scheduled` counts newly created records; `already_scheduled` counts requested clients that already had one for that date.
+
+**Errors** — `400` invalid body or unknown client id · `401` not an admin
+
+---
+
 ### `PATCH /api/admin/collections/:id`
 
 Update a collection — mark completed or missed, record bags collected, add notes.
@@ -690,7 +722,9 @@ When `status` is set to `completed`, `completed_at` is automatically set to the 
 
 ### `POST /api/admin/collections/bulk-schedule`
 
-Generate scheduled collection records for all active clients for the next N weeks. Skips any date that already has a record (safe to re-run).
+Generate scheduled collection records for all active clients for the next N weeks, based on each client's `collection_day`. Skips any date that already has a record (safe to re-run).
+
+Clients with no `collection_day`, or a value outside `Monday`–`Saturday`, are skipped and reported in `skipped_clients` rather than failing the run.
 
 **Request body**
 ```json
@@ -703,8 +737,14 @@ Generate scheduled collection records for all active clients for the next N week
 
 **Response `200`**
 ```json
-{ "ok": true, "data": { "scheduled": 88 } }
+{ "ok": true, "data": { "scheduled": 72, "already_scheduled": 16, "skipped_clients": 0 } }
 ```
+
+| Field | Meaning |
+|---|---|
+| `scheduled` | Records newly created by this call |
+| `already_scheduled` | Dates that already had a record and were left alone |
+| `skipped_clients` | Active clients with a missing or unrecognised collection day |
 
 ---
 

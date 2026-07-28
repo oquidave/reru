@@ -1,4 +1,11 @@
+export type { ApiResponse } from './api'
+
 export type CollectionDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday'
+
+/** Every valid collection day, in week order. Keep in sync with `CollectionDay`. */
+export const COLLECTION_DAYS: readonly CollectionDay[] = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+] as const
 export type Plan = string   // dynamic — matches pricing_tiers.slug
 export type ClientStatus = 'active' | 'suspended' | 'cancelled'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue'
@@ -116,6 +123,7 @@ export type AuditAction =
   | 'mark_collection_completed'
   | 'mark_collection_missed'
   | 'bulk_schedule_collections'
+  | 'schedule_collection'
   | 'add_location'
   | 'edit_location'
 

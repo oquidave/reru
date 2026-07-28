@@ -4,6 +4,7 @@ import { getAdminUser } from '@/lib/auth/get-admin-user'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminCollectionRow } from '@/components/admin/collections/admin-collection-row'
 import { AdminBulkScheduleButton } from '@/components/admin/collections/admin-bulk-schedule-button'
+import { AdminScheduleCollectionDialog, type SchedulableClient } from '@/components/admin/collections/admin-schedule-collection-dialog'
 import type { ServiceLocation } from '@/types'
 
 export const metadata = { title: "Today's Schedule — RERU Admin" }
@@ -22,17 +23,23 @@ export default async function AdminSchedulePage() {
     reru_clients: { id: string; name: string; address: string; phone: string; service_locations: { name: string } | null } | null
   }
 
-  const [{ data: rows }, { data: locationRows }] = await Promise.all([
+  const [{ data: rows }, { data: locationRows }, { data: clientRows }] = await Promise.all([
     supabase
       .from('reru_collections')
       .select('id, status, notes, reru_clients(id, name, address, phone, service_locations(name))')
       .eq('scheduled_date', todayISO)
       .order('status'),
     supabase.from('service_locations').select('name').eq('active', true).order('name'),
+    supabase
+      .from('reru_clients')
+      .select('id, name, address, collection_day')
+      .eq('status', 'active')
+      .order('name'),
   ])
 
   const collections = (rows ?? []) as unknown as CollectionWithClient[]
   const locationNames = ((locationRows ?? []) as Pick<ServiceLocation, 'name'>[]).map((l) => l.name)
+  const schedulableClients = (clientRows ?? []) as SchedulableClient[]
   const total     = collections.length
   const completed = collections.filter((c) => c.status === 'completed').length
   const progress  = total > 0 ? Math.round((completed / total) * 100) : 0
@@ -60,7 +67,10 @@ export default async function AdminSchedulePage() {
           <h1 className="reru-h1 text-reru-text-primary">Today&apos;s Schedule</h1>
           <p className="reru-body text-reru-text-secondary mt-1">{dateDisplay}</p>
         </div>
-        <AdminBulkScheduleButton />
+        <div className="flex items-center gap-3">
+          <AdminBulkScheduleButton />
+          <AdminScheduleCollectionDialog clients={schedulableClients} defaultDate={todayISO} />
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -84,7 +94,10 @@ export default async function AdminSchedulePage() {
       {total === 0 ? (
         <div className="bg-white border border-reru-border rounded-xl shadow-card p-12 text-center">
           <p className="reru-card-title text-reru-text-primary mb-1">No collections scheduled today</p>
-          <p className="reru-body text-reru-text-secondary">Use &quot;Bulk schedule&quot; to create collection records.</p>
+          <p className="reru-body text-reru-text-secondary">
+            Use &quot;Schedule collection&quot; to add specific clients for today, or &quot;Bulk schedule&quot; to generate
+            the next 4 weeks from everyone&apos;s usual collection day.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">

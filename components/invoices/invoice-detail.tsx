@@ -47,7 +47,7 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
     doc.text('BILLED TO', 15, 42)
     doc.setFont('helvetica', 'normal')
     doc.text(client.name, 15, 49)
-    doc.text(client.address, 15, 55)
+    doc.text(client.address ?? '', 15, 55)
     doc.text(`Phone: ${client.phone}`, 15, 61)
 
     // Service provider

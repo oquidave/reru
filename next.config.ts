@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    // Type errors must fail the build — a missing `Saturday` case in the bulk
+    // scheduler shipped to production while this was disabled.
+    ignoreBuildErrors: false,
   },
 }
 

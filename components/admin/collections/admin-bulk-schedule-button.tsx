@@ -29,13 +29,28 @@ export function AdminBulkScheduleButton() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ weeks_ahead: 4 }),
       })
-      const json = await res.json() as { ok: boolean; data?: { scheduled: number }; error?: string }
-      if (!json.ok) {
-        toast.error(json.error ?? 'Failed to schedule collections')
+      // A crashed route returns an empty body, so never assume the response is JSON.
+      const json = await res.json().catch(() => null) as
+        | { ok: boolean; data?: { scheduled: number; already_scheduled: number; skipped_clients: number }; error?: string }
+        | null
+
+      if (!json || !json.ok) {
+        toast.error(json?.error ?? 'Failed to schedule collections. Please try again.')
         return
       }
-      toast.success(`${json.data?.scheduled ?? 0} collections scheduled for the next 4 weeks`)
+
+      const { scheduled = 0, already_scheduled = 0, skipped_clients = 0 } = json.data ?? {}
+      if (scheduled === 0 && already_scheduled > 0) {
+        toast.success('All collections for the next 4 weeks were already scheduled')
+      } else {
+        toast.success(`${scheduled} collection${scheduled === 1 ? '' : 's'} scheduled for the next 4 weeks`)
+      }
+      if (skipped_clients > 0) {
+        toast.warning(`${skipped_clients} client${skipped_clients === 1 ? '' : 's'} skipped — no collection day set`)
+      }
       router.refresh()
+    } catch {
+      toast.error('Could not reach the server. Check your connection and try again.')
     } finally {
       setLoading(false)
     }

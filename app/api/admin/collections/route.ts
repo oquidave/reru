@@ -73,3 +73,76 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Co
     data: { data: rows, total: count ?? 0 },
   })
 }
+
+const createSchema = z.object({
+  client_ids:     z.array(z.string().uuid()).min(1, 'Select at least one client').max(200),
+  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
+  notes:          z.string().max(1000).optional(),
+})
+
+type CreatedData = { scheduled: number; already_scheduled: number }
+
+/** Schedules a one-off collection for one or more clients on a specific date. */
+export async function POST(request: Request): Promise<NextResponse<ApiResponse<CreatedData>>> {
+  const adminUser = await getAdminUser(request)
+  if (!adminUser) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json().catch(() => null) as unknown
+  const parsed = createSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { ok: false, error: parsed.error.errors[0]?.message ?? 'Invalid request body' },
+      { status: 400 }
+    )
+  }
+
+  const { client_ids, scheduled_date, notes } = parsed.data
+
+  // Reject ids that are not real clients rather than relying on the FK error.
+  const { data: existing, error: clientsError } = await adminUser.supabase
+    .from('reru_clients')
+    .select('id')
+    .in('id', client_ids)
+
+  if (clientsError) {
+    console.error('[POST /api/admin/collections]', clientsError)
+    return NextResponse.json({ ok: false, error: 'Failed to verify clients' }, { status: 500 })
+  }
+  if ((existing?.length ?? 0) !== client_ids.length) {
+    return NextResponse.json({ ok: false, error: 'One or more clients were not found' }, { status: 400 })
+  }
+
+  const rows = client_ids.map((client_id) => ({
+    client_id,
+    scheduled_date,
+    status: 'scheduled',
+    ...(notes ? { notes } : {}),
+  }))
+
+  const { data: inserted, error } = await adminUser.supabase
+    .from('reru_collections')
+    .upsert(rows, { onConflict: 'client_id,scheduled_date', ignoreDuplicates: true })
+    .select('id')
+
+  if (error) {
+    console.error('[POST /api/admin/collections]', error)
+    return NextResponse.json({ ok: false, error: 'Failed to schedule collections' }, { status: 500 })
+  }
+
+  const created = inserted?.length ?? 0
+
+  await adminUser.supabase.from('audit_logs').insert({
+    admin_id:  adminUser.user.id,
+    action:    'schedule_collection',
+    entity:    'collection',
+    entity_id: inserted?.[0]?.id ?? '00000000-0000-0000-0000-000000000000',
+    new_value: { scheduled_date, client_count: client_ids.length, created },
+  })
+
+  return NextResponse.json({
+    ok: true,
+    data: { scheduled: created, already_scheduled: rows.length - created },
+  })
+}

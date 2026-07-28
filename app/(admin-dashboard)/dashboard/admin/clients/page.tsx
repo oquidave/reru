@@ -22,7 +22,8 @@ export default async function AdminClientsPage({ searchParams }: PageProps) {
 
   type ClientRow = {
     id: string; user_id: string; name: string; phone: string; address: string | null
-    location_id: string | null; collection_day: string | null; plan: string | null; status: string
+    location_id: string | null; other_location: string | null
+    collection_day: string | null; plan: string | null; custom_price: number | null; status: string
     paid_through: string | null; created_at: string
     landmark: string | null; property_type: string | null; bin_count: number | null
     alt_phone: string | null; alt_phone_is_whatsapp: boolean

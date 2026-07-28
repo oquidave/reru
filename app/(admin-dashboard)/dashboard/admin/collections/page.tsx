@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { AdminDatePicker } from '@/components/admin/collections/admin-date-picker'
 import { AdminCollectionRow } from '@/components/admin/collections/admin-collection-row'
 import { AdminBulkScheduleButton } from '@/components/admin/collections/admin-bulk-schedule-button'
+import { AdminScheduleCollectionDialog, type SchedulableClient } from '@/components/admin/collections/admin-schedule-collection-dialog'
 import type { ServiceLocation } from '@/types'
 
 export const metadata = { title: 'Collections — RERU Admin' }
@@ -31,17 +32,23 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
     reru_clients: { id: string; name: string; address: string; phone: string; service_locations: { name: string } | null } | null
   }
 
-  const [{ data: rows }, { data: locationRows }] = await Promise.all([
+  const [{ data: rows }, { data: locationRows }, { data: clientRows }] = await Promise.all([
     supabase
       .from('reru_collections')
       .select('id, status, notes, reru_clients(id, name, address, phone, service_locations(name))')
       .eq('scheduled_date', selectedDate)
       .order('status'),
     supabase.from('service_locations').select('name').eq('active', true).order('name'),
+    supabase
+      .from('reru_clients')
+      .select('id, name, address, collection_day')
+      .eq('status', 'active')
+      .order('name'),
   ])
 
   const collections = (rows ?? []) as unknown as CollectionWithClient[]
   const locationNames = ((locationRows ?? []) as Pick<ServiceLocation, 'name'>[]).map((l) => l.name)
+  const schedulableClients = (clientRows ?? []) as SchedulableClient[]
 
   const total     = collections.length
   const completed = collections.filter((c) => c.status === 'completed').length
@@ -74,6 +81,7 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
             <AdminDatePicker currentDate={selectedDate} />
           </Suspense>
           <AdminBulkScheduleButton />
+          <AdminScheduleCollectionDialog clients={schedulableClients} defaultDate={selectedDate} />
         </div>
       </div>
 
@@ -95,7 +103,10 @@ export default async function AdminCollectionsPage({ searchParams }: PageProps) 
       {total === 0 ? (
         <div className="bg-white border border-reru-border rounded-xl shadow-card p-12 text-center">
           <p className="reru-card-title text-reru-text-primary mb-1">No collections scheduled</p>
-          <p className="reru-body text-reru-text-secondary">No collection records for {selectedDate}. Use &quot;Bulk schedule&quot; to create them.</p>
+          <p className="reru-body text-reru-text-secondary">
+            No collection records for {selectedDate}. Use &quot;Schedule collection&quot; to add specific clients for this
+            date, or &quot;Bulk schedule&quot; to generate the next 4 weeks from everyone&apos;s usual collection day.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
