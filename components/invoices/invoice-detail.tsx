@@ -1,5 +1,6 @@
 'use client'
 
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Download, CheckCircle2 } from 'lucide-react'
 import { Logo } from '@/components/shared/logo'
@@ -13,9 +14,18 @@ import type { Invoice, Client } from '@/types'
 interface InvoiceDetailProps {
   invoice: Invoice
   client: Client
+  /**
+   * Who is looking. Staff see the same document — that is the point, so they can
+   * hand a household its receipt — but never the client's own payment action.
+   */
+  viewer?: 'client' | 'admin'
+  /** Rendered in the actions row; used by admin to mark an unpaid invoice paid. */
+  adminAction?: React.ReactNode
 }
 
-export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
+export function InvoiceDetail({ invoice, client, viewer = 'client', adminAction }: InvoiceDetailProps) {
+  const isAdmin = viewer === 'admin'
+  const backHref = isAdmin ? '/dashboard/admin/invoices' : '/dashboard/invoices'
   // A settled invoice is a proof of payment, not a request for one. It is titled
   // as a receipt and drops the payment instructions, which otherwise tell someone
   // who has already paid how to pay.
@@ -139,7 +149,7 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
     <div>
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/dashboard/invoices"
+          href={backHref}
           className="inline-flex items-center gap-1 text-sm font-semibold text-reru-text-secondary hover:text-green-700 transition-colors"
         >
           <ArrowLeft size={14} /> All invoices
@@ -256,7 +266,11 @@ export function InvoiceDetail({ invoice, client }: InvoiceDetailProps) {
         )}
 
         <div className="flex flex-wrap gap-3">
-          {!isPaid && <PayWithMomoDialog invoice={invoice} defaultPhone={client.phone} />}
+          {/* Staff must never be able to trigger a MoMo prompt on a household's phone. */}
+          {!isPaid && !isAdmin && <PayWithMomoDialog invoice={invoice} defaultPhone={client.phone} />}
+          {/* Keyed fragment: adminAction crosses the server/client boundary as a prop,
+              which loses React's key validation once it lands in this children array. */}
+          {!isPaid && isAdmin && <Fragment key="admin-action">{adminAction}</Fragment>}
           <Button
             onClick={handleDownloadPdf}
             variant={isPaid ? 'default' : 'outline'}

@@ -1,4 +1,5 @@
-import { FileText } from 'lucide-react'
+import Link from 'next/link'
+import { FileText, Receipt } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { AdminMarkPaidDialog } from '@/components/admin/invoices/admin-mark-paid-dialog'
 import { formatDate, formatUGX } from '@/lib/utils'
@@ -44,14 +45,31 @@ export function AdminInvoicesTable({ invoices }: AdminInvoicesTableProps) {
                 className={`hover:bg-green-50 transition-colors duration-150 ${i < invoices.length - 1 ? 'border-b border-reru-border' : ''}`}
               >
                 <td className="px-6 py-4">
-                  <p className="text-md font-semibold text-reru-text-primary">{inv.client_name}</p>
+                  <Link
+                    href={`/dashboard/admin/invoices/${inv.id}`}
+                    className="text-md font-semibold text-reru-text-primary hover:text-green-700 transition-colors"
+                  >
+                    {inv.client_name}
+                  </Link>
+                  <p className="text-xs text-reru-text-muted">{inv.id}</p>
                 </td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary whitespace-nowrap">{formatDate(inv.date)}</td>
                 <td className="px-6 py-4 text-md text-reru-text-secondary capitalize">{inv.plan}</td>
                 <td className="px-6 py-4 text-md font-semibold text-reru-text-primary text-right">{formatUGX(inv.total)}</td>
                 <td className="px-6 py-4 text-right"><StatusBadge status={inv.status} /></td>
-                <td className="px-6 py-4 text-right">
-                  {inv.status !== 'paid' && <AdminMarkPaidDialog invoice={inv} />}
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-2">
+                    {inv.status !== 'paid' && <AdminMarkPaidDialog invoice={inv} />}
+                    {/* Paid rows previously had no action at all — staff could not
+                        reach the receipt for a household that paid in cash. */}
+                    <Link
+                      href={`/dashboard/admin/invoices/${inv.id}`}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium text-reru-text-secondary hover:text-green-700 hover:bg-green-50 transition-colors whitespace-nowrap"
+                    >
+                      {inv.status === 'paid' ? <Receipt size={14} /> : <FileText size={14} />}
+                      {inv.status === 'paid' ? 'Receipt' : 'View'}
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
