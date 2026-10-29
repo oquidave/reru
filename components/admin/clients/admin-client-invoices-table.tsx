@@ -1,6 +1,7 @@
 import { FileText } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { AdminMarkPaidDialog } from '@/components/admin/invoices/admin-mark-paid-dialog'
+import { AdminDeleteInvoiceDialog } from '@/components/admin/invoices/admin-delete-invoice-dialog'
 import { formatDate, formatUGX } from '@/lib/utils'
 import type { Invoice } from '@/types'
 
@@ -44,8 +45,13 @@ export function AdminClientInvoicesTable({ invoices }: AdminClientInvoicesTableP
                 <td className="px-6 py-4 text-md text-reru-text-secondary capitalize">{inv.plan}</td>
                 <td className="px-6 py-4 text-md font-semibold text-reru-text-primary text-right">{formatUGX(inv.total)}</td>
                 <td className="px-6 py-4 text-right"><StatusBadge status={inv.status} /></td>
-                <td className="px-6 py-4 text-right">
-                  {inv.status !== 'paid' && <AdminMarkPaidDialog invoice={inv} />}
+                <td className="px-6 py-4">
+                  {inv.status !== 'paid' && (
+                    <div className="flex items-center justify-end gap-2">
+                      <AdminMarkPaidDialog invoice={inv} />
+                      <AdminDeleteInvoiceDialog invoice={inv} />
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

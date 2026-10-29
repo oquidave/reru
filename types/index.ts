@@ -125,6 +125,7 @@ export type AuditAction =
   | 'edit_client'
   | 'mark_invoice_paid'
   | 'mark_invoice_overdue'
+  | 'delete_invoice'
   | 'generate_invoice'
   | 'mark_collection_completed'
   | 'mark_collection_missed'

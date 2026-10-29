@@ -981,6 +981,32 @@ Mark a pending invoice as overdue. Cannot be applied to already-paid invoices.
 
 ---
 
+### `DELETE /api/admin/invoices/:id`
+
+Delete an unpaid (`pending` or `overdue`) invoice raised in error. The full invoice is
+copied into `audit_logs` (`action: delete_invoice`) before it disappears.
+
+**Request body** — optional
+```json
+{ "reason": "Duplicate of INV-2026-041" }
+```
+
+| Field | Type | Constraints |
+|---|---|---|
+| `reason` | string | optional, max 200 chars — stored on the audit row |
+
+**Response `200`**
+```json
+{ "ok": true, "data": { "id": "INV-2026-042" } }
+```
+
+**Errors**
+- `400` — Paid invoices cannot be deleted
+- `404` — Invoice not found
+- `409` — The invoice has mobile-money payment attempts (any status) in `reru_payments`, or it was paid while the request was in flight
+
+---
+
 ### `GET /api/admin/invoices/export`
 
 Download all invoices as a CSV file.

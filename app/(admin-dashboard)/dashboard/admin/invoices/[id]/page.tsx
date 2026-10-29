@@ -3,6 +3,7 @@ import { getAdminUser } from '@/lib/auth/get-admin-user'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { InvoiceDetail } from '@/components/invoices/invoice-detail'
 import { AdminMarkPaidDialog } from '@/components/admin/invoices/admin-mark-paid-dialog'
+import { AdminDeleteInvoiceDialog } from '@/components/admin/invoices/admin-delete-invoice-dialog'
 import type { Invoice, Client } from '@/types'
 
 export const metadata = { title: 'Invoice — RERU Admin' }
@@ -44,7 +45,12 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
       invoice={invoice as Invoice}
       client={{ ...clientRest, location: service_locations?.name ?? null } as unknown as Client}
       viewer="admin"
-      adminAction={<AdminMarkPaidDialog invoice={invoice as Invoice} />}
+      adminAction={
+        <>
+          <AdminMarkPaidDialog invoice={invoice as Invoice} />
+          <AdminDeleteInvoiceDialog invoice={invoice as Invoice} redirectTo="/dashboard/admin/invoices" />
+        </>
+      }
     />
   )
 }

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { FileText, Receipt } from 'lucide-react'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { AdminMarkPaidDialog } from '@/components/admin/invoices/admin-mark-paid-dialog'
+import { AdminDeleteInvoiceDialog } from '@/components/admin/invoices/admin-delete-invoice-dialog'
 import { formatDate, formatUGX } from '@/lib/utils'
 import type { Invoice } from '@/types'
 
@@ -60,6 +61,7 @@ export function AdminInvoicesTable({ invoices }: AdminInvoicesTableProps) {
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
                     {inv.status !== 'paid' && <AdminMarkPaidDialog invoice={inv} />}
+                    {inv.status !== 'paid' && <AdminDeleteInvoiceDialog invoice={inv} />}
                     {/* Paid rows previously had no action at all — staff could not
                         reach the receipt for a household that paid in cash. */}
                     <Link
