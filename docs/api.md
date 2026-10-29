@@ -542,7 +542,14 @@ List all active clients (id, name, location).
 
 ### `POST /api/admin/clients`
 
-Admin-create a new client account. Sets a random initial password and sends a password-setup link to the client's email.
+Admin-create a new client account. Creates the same Supabase phone-auth login as self sign-up
+(phone already confirmed), so the client logs in with an SMS code. If an email is given it is
+added to the same login, already confirmed. No password is set and no email is sent.
+
+| Field | Constraints |
+|---|---|
+| `phone` | required — a valid Ugandan mobile number in any common format; stored as `+2567XXXXXXXX` |
+| `email` | optional — empty string or omitted for none |
 
 **Request body**
 ```json
@@ -566,7 +573,8 @@ Admin-create a new client account. Sets a random initial password and sends a pa
 ```
 
 **Errors**
-- `409` — Email already registered
+- `400` — Invalid input (e.g. not a valid Ugandan phone number)
+- `409` — Phone number or email already registered
 
 ---
 

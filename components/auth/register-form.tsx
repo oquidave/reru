@@ -41,7 +41,8 @@ export function RegisterForm() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithOtp({
       phone,
-      options: { data: { full_name: data.name.trim() }, shouldCreateUser: true },
+      // `app` marks the login as Reru's; other apps' triggers on this shared project skip it.
+      options: { data: { full_name: data.name.trim(), app: 'reru' }, shouldCreateUser: true },
     })
     setLoading(false)
     if (error) {

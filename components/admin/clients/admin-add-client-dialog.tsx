@@ -13,14 +13,15 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatUGX } from '@/lib/utils'
+import { normalizeUgPhone } from '@/lib/phone'
 import type { ServiceLocation, PricingTier } from '@/types'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
 const step1Schema = z.object({
   name:  z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone must be at least 10 characters'),
+  email: z.string().trim().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().refine((v) => normalizeUgPhone(v) !== null, 'Enter a valid Ugandan phone number'),
 })
 
 const step2Schema = z.object({
@@ -94,16 +95,13 @@ export function AdminAddClientDialog() {
       const json = await res.json() as { ok: boolean; error?: string }
 
       if (!json.ok) {
-        if (res.status === 409) {
-          toast.error('This email address is already registered.')
-          setStep(1)
-        } else {
-          toast.error(json.error ?? 'Failed to add client')
-        }
+        toast.error(json.error ?? 'Failed to add client')
+        // 409 means the phone or email is taken — both are on step 1.
+        if (res.status === 409) setStep(1)
         return
       }
 
-      toast.success('Client added. A password-setup email has been sent.')
+      toast.success('Client added. They can log in with their phone number.')
       handleClose(false)
       router.refresh()
     } finally {
@@ -144,7 +142,9 @@ export function AdminAddClientDialog() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="add-email">Email address</Label>
+              <Label htmlFor="add-email">
+                Email address <span className="text-reru-text-muted font-normal">(optional)</span>
+              </Label>
               <Input id="add-email" type="email" {...form1.register('email')} autoComplete="off" />
               {form1.formState.errors.email && (
                 <p className="text-sm text-reru-danger">{form1.formState.errors.email.message}</p>
@@ -153,7 +153,7 @@ export function AdminAddClientDialog() {
 
             <div className="space-y-1.5">
               <Label htmlFor="add-phone">Phone number</Label>
-              <Input id="add-phone" type="tel" {...form1.register('phone')} autoComplete="off" />
+              <Input id="add-phone" type="tel" placeholder="07XX XXX XXX" {...form1.register('phone')} autoComplete="off" />
               {form1.formState.errors.phone && (
                 <p className="text-sm text-reru-danger">{form1.formState.errors.phone.message}</p>
               )}

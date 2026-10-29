@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getAdminUser } from '@/lib/auth/get-admin-user'
 import { createSupabaseServerClientWithServiceRole } from '@/lib/supabase/server'
-import { randomUUID } from 'crypto'
+import { normalizeUgPhone } from '@/lib/phone'
 
 const addClientSchema = z.object({
   name:           z.string().min(2, 'Name must be at least 2 characters'),
-  email:          z.string().email('Invalid email address'),
-  phone:          z.string().min(10, 'Phone must be at least 10 characters'),
+  email:          z.string().trim().email('Invalid email address').optional().or(z.literal('')),
+  phone:          z.string().refine((v) => normalizeUgPhone(v) !== null, 'Enter a valid Ugandan phone number'),
   address:        z.string().min(5, 'Address must be at least 5 characters'),
   location_id:    z.string().uuid('Select a location'),
   collection_day: z.enum(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']),
@@ -29,21 +29,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: message }, { status: 400 })
     }
 
-    const { name, email, phone, address, location_id, collection_day, plan } = parsed.data
+    const { name, address, location_id, collection_day, plan } = parsed.data
+    const phone = normalizeUgPhone(parsed.data.phone)
+    if (!phone) {
+      return NextResponse.json({ ok: false, error: 'Enter a valid Ugandan phone number' }, { status: 400 })
+    }
+    const email = parsed.data.email || undefined
     const supabase = await createSupabaseServerClientWithServiceRole()
 
+    // Same login account self sign-up produces: a phone-auth user, already confirmed,
+    // so the client signs in with an SMS code. Email is an optional extra login.
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password: randomUUID(),
-      email_confirm: true,
-      user_metadata: { full_name: name },
+      phone,
+      phone_confirm: true,
+      ...(email ? { email, email_confirm: true } : {}),
+      // `app` marks the login as Reru's; other apps' triggers on this shared project skip it.
+      user_metadata: { full_name: name, app: 'reru' },
     })
 
     if (authError) {
-      if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
+      if (authError.code === 'phone_exists') {
+        return NextResponse.json({ ok: false, error: 'This phone number is already registered.' }, { status: 409 })
+      }
+      if (authError.code === 'email_exists') {
         return NextResponse.json({ ok: false, error: 'This email address is already registered.' }, { status: 409 })
       }
-      return NextResponse.json({ ok: false, error: authError.message }, { status: 400 })
+      console.error('[POST /api/admin/clients] createUser', authError)
+      return NextResponse.json({ ok: false, error: 'Failed to create client account' }, { status: 500 })
     }
 
     const userId = authData.user.id
@@ -56,12 +68,10 @@ export async function POST(request: Request) {
       .single()
 
     if (clientError) {
+      console.error('[POST /api/admin/clients] insert', clientError)
       await supabase.auth.admin.deleteUser(userId)
       return NextResponse.json({ ok: false, error: 'Failed to create client profile' }, { status: 500 })
     }
-
-    // Send password-setup (recovery) link so the client can set their own password
-    await supabase.auth.admin.generateLink({ type: 'recovery', email })
 
     await supabase.from('audit_logs').insert({
       admin_id:  adminUser.user.id,
